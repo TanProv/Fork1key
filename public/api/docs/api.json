@@ -1,0 +1,195 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Verification API",
+        "version": "1.0.0",
+        "description": "API for student/teacher verification with captcha bypass support."
+    },
+    "servers": [
+        {
+            "url": "/"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "CsrfAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-CSRF-Token",
+                "description": "CSRF Token required for POST requests. Obtain via window.CSRF_TOKEN in browser console or parsing index page."
+            }
+        }
+    },
+    "security": [
+        {
+            "CsrfAuth": []
+        }
+    ],
+    "paths": {
+        "/api/batch": {
+            "post": {
+                "summary": "Batch Verification",
+                "description": "Submit a batch of verification requests. Returns an event stream (SSE).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "hCaptchaToken": {
+                                        "type": "string",
+                                        "description": "HCaptcha token OR API/CD Key"
+                                    },
+                                    "turnstileToken": {
+                                        "type": "string",
+                                        "description": "Turnstile token (optional if using API Key)"
+                                    },
+                                    "verificationIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "programId": {
+                                        "type": "string",
+                                        "deprecated": true
+                                    },
+                                    "useLucky": {
+                                        "type": "boolean",
+                                        "deprecated": true
+                                    }
+                                },
+                                "required": [
+                                    "hCaptchaToken",
+                                    "verificationIds"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Event Stream",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "event: start\\ndata: {\\\"total\\\":1,\\\"current_quota\\\":99,\\\"cost\\\":1}\\n\\ndata: {\\\"verificationId\\\":\\\"vid_123\\\",\\\"currentStep\\\":\\\"success\\\",\\\"message\\\":\\\"Verified\\\"}\\n\\nevent: end\\ndata: {\\\"completed\\\":1,\\\"total\\\":1}\\n\\n"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cancel": {
+            "post": {
+                "summary": "Cancel Verification",
+                "description": "Cancel a pending verification. Requires valid CSRF token.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "verificationId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "verificationId"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cancellation Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "verificationId": {
+                                            "type": "string"
+                                        },
+                                        "currentStep": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cancelled"
+                                        },
+                                        "alreadyCancelled": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/check-status": {
+            "post": {
+                "summary": "Check Status",
+                "description": "Check the status of a pending verification.",
+                "security": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "checkToken": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "checkToken"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "currentStep": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/status": {
+            "get": {
+                "summary": "System Status",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "System status info"
+                    }
+                }
+            }
+        }
+    }
+}

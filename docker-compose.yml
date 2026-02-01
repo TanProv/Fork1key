@@ -1,0 +1,15 @@
+services:
+  batch-verifier:
+    build: .
+    container_name: batch-verifier-proxy
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Environment variables will be loaded from .env file by default
+    volumes:
+      # Persist keys.json so data isn't lost on restart
+      - ./keys.json:/app/keys.json
+    env_file:
+      - .env

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Verification API Documentation</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="redoc-container"></div>
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+    <script>
+        (function () {
+            var userLang = navigator.language || navigator.userLanguage || '';
+            var specUrl = '/api/docs/api.json';
+            if (userLang.toLowerCase().indexOf('zh') === 0) {
+                specUrl = '/api/docs/api.json?lang=zh';
+            }
+            Redoc.init(specUrl, {}, document.getElementById('redoc-container'));
+        })();
+    </script>
+</body>
+
+</html>

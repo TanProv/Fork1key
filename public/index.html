@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☕ Batch Verifier</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Top Controls -->
+        <div class="top-controls">
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun"></i> Chế độ sáng
+            </button>
+        </div>
+
+        <main class="dashboard">
+            <!-- Input Card -->
+            <div class="card input-card">
+                <div class="card-header user-select-none">
+                    <div class="header-left">
+                        <i class="fas fa-pen-to-square"></i>
+                        <h2>Nhập Dữ Liệu</h2>
+                    </div>
+                    <div class="header-right">
+                        <div class="dropdown">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>Goo</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="status-badge">
+                            <span class="status-dot"></span>
+                            Sẵn sàng
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="textarea-container">
+                        <textarea id="verificationInput" placeholder="Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
+US IP + Fingerprint browser.
+Đăng nhập trực tiếp không cần xác minh!!!
+Khuyên dùng: Dùng IP Mỹ gốc và ít người dùng. Tránh dùng IP 'Data Center' bị nát.
+
+I'm feeling lucky -> Sử dụng một trong các trường đã hoạt động tốt trong 2 ngày qua.
+KHÔNG CẦN ĐĂNG NHẬP! HOÀN TOÀN MIỄN PHÍ!
+Trang web này sẽ duy trì lâu nhất có thể.
+Nếu token hết hạn hoặc đã xử lý -> Hãy thử lấy lại link ? mới.
+Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ)."></textarea>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Dán trực tiếp URL - hệ thống sẽ tự động trích xuất ID xác minh</span>
+                    </div>
+
+                    <div class="api-key-section">
+                        <button class="btn-api-key">
+                            <i class="fas fa-key"></i> Đặt API Key
+                        </button>
+                    </div>
+
+                    <div class="action-footer">
+                        <div class="stats-row">
+                            <span>0 dòng đã nhập</span>
+                            <span>1000/1000 slot trống</span>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-settings" title="Cài đặt">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn-start" id="startBtn">
+                                <i class="fas fa-play"></i> Bắt Đầu Xác Minh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Card -->
+            <div class="card results-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="fas fa-file-lines"></i>
+                        <h2>Kết Quả</h2>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn-icon-text">
+                            <i class="fas fa-trash-can"></i> Xóa
+                        </button>
+                        <button class="btn-icon-text">
+                            <i class="fas fa-download"></i> Xuất file
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body empty-state" id="resultsBody">
+                    <div class="empty-content">
+                        <i class="fas fa-gift pulse-icon"></i>
+                        <h3>Chưa có kết quả</h3>
+                        <p>Nhập ID xác minh và bấm Bắt đầu</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-logo">
+            <a href="https://linux.do" target="_blank" class="linux-do-link">
+                <i class="fab fa-linux"></i> Linux.do
+            </a>
+            <span style="margin: 0 10px; color: var(--text-secondary);">|</span>
+            <a href="/admin.html" class="linux-do-link" style="color: var(--text-secondary); font-size: 0.9em;">
+                <i class="fas fa-user-shield"></i> Admin Panel
+            </a>
+        </footer>
+    </div>
+
+    <!-- Maintain previous sections hidden or at bottom if needed, 
+         but user requested "just the part in the photo" so primarily focusing on that.
+         We can keep the sponsor links below or separate appropriately if needed later. -->
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>

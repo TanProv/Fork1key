@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+README.md
+task.md
+implementation_plan.md
+walkthrough.md
+security_audit.md
+security_master_key_report.md
