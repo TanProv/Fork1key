@@ -81,8 +81,8 @@ if (USE_REDIS) {
   };
 }
 
-// Generate CSRF token
-const CSRF_TOKEN = uuidv4();
+// Generate CSRF token (fixed for Vercel serverless)
+const CSRF_TOKEN = process.env.CSRF_TOKEN || 'vercel-csrf-token-' + (process.env.VERCEL_GIT_COMMIT_SHA || 'local');
 
 // Middleware
 app.use(helmet({
