@@ -99,9 +99,9 @@ const limiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  // Use X-Forwarded-For for Vercel
+  validate: false, // Disable validation for Vercel compatibility
   keyGenerator: (req) => {
-    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.headers['x-real-ip'] || req.ip || 'unknown';
   },
   message: { error: 'Too many requests from this IP, please try again later.' }
 });
@@ -112,8 +112,9 @@ const adminLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: (req) => {
-    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.headers['x-real-ip'] || req.ip || 'unknown';
   },
   message: { error: 'Too many admin attempts, please try again later.' }
 });
