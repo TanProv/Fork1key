@@ -102,20 +102,58 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                         <h2>Kết Quả</h2>
                     </div>
                     <div class="header-right">
-                        <button class="btn-icon-text">
+                        <button class="btn-icon-text" id="clearResultsBtn">
                             <i class="fas fa-trash-can"></i> Xóa
                         </button>
-                        <button class="btn-icon-text">
+                        <button class="btn-icon-text" id="exportResultsBtn">
                             <i class="fas fa-download"></i> Xuất file
                         </button>
                     </div>
                 </div>
 
-                <div class="card-body empty-state" id="resultsBody">
-                    <div class="empty-content">
-                        <i class="fas fa-gift pulse-icon"></i>
-                        <h3>Chưa có kết quả</h3>
-                        <p>Nhập ID xác minh và bấm Bắt đầu</p>
+                <div class="card-body" id="resultsBody">
+                    <!-- Progress Section -->
+                    <div id="resultsProgress" style="display: none; padding: 15px;">
+                        <!-- Progress Bar -->
+                        <div
+                            style="height: 4px; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e); border-radius: 2px; margin-bottom: 10px;">
+                        </div>
+                        <div id="progressText"
+                            style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;">0 / 0
+                            completed</div>
+
+                        <!-- Stats Boxes -->
+                        <div
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                            <div
+                                style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; text-align: center;">
+                                <div id="statSuccess" style="font-size: 24px; font-weight: bold; color: #22c55e;">0
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 12px;">Success</div>
+                            </div>
+                            <div
+                                style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; text-align: center;">
+                                <div id="statFailed" style="font-size: 24px; font-weight: bold; color: #ef4444;">0</div>
+                                <div style="color: var(--text-secondary); font-size: 12px;">Failed</div>
+                            </div>
+                            <div
+                                style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; text-align: center;">
+                                <div id="statTotal" style="font-size: 24px; font-weight: bold; color: #a855f7;">0</div>
+                                <div style="color: var(--text-secondary); font-size: 12px;">Total</div>
+                            </div>
+                        </div>
+
+                        <!-- Items List -->
+                        <div id="resultsList" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-content"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
+                        <i class="fas fa-gift pulse-icon"
+                            style="font-size: 48px; color: #3b82f6; margin-bottom: 15px;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 5px;">Chưa có kết quả</h3>
+                        <p style="color: var(--text-secondary);">Nhập ID xác minh và bấm Bắt đầu</p>
                     </div>
                 </div>
             </div>

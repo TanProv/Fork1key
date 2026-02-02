@@ -119,22 +119,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Integration
     const resultsBody = document.getElementById('resultsBody');
-    const clearBtn = document.querySelector('.btn-icon-text:first-child'); // First button in right header is Clear
-    const exportBtn = document.querySelector('.btn-icon-text:last-child');
+    const clearBtn = document.getElementById('clearResultsBtn');
+    const exportBtn = document.getElementById('exportResultsBtn');
+    const progressSection = document.getElementById('resultsProgress');
+    const emptyState = document.getElementById('emptyState');
+    const resultsList = document.getElementById('resultsList');
+
+    // Stats tracking
+    let verificationStats = { success: 0, failed: 0, total: 0, completed: 0 };
+    let resultItems = {}; // Track items by ID
 
     // Clear Results
     clearBtn.addEventListener('click', () => {
-        resultsBody.innerHTML = `
-            <div class="empty-content">
-                <i class="fas fa-gift pulse-icon"></i>
-                <h3>Chưa có kết quả</h3>
-                <p>Nhập ID xác minh và bấm Bắt đầu</p>
+        progressSection.style.display = 'none';
+        emptyState.style.display = 'flex';
+        resultsList.innerHTML = '';
+        verificationStats = { success: 0, failed: 0, total: 0, completed: 0 };
+        resultItems = {};
+        updateStatsUI();
+    });
+
+    function updateStatsUI() {
+        document.getElementById('statSuccess').textContent = verificationStats.success;
+        document.getElementById('statFailed').textContent = verificationStats.failed;
+        document.getElementById('statTotal').textContent = verificationStats.total;
+        document.getElementById('progressText').textContent = `${verificationStats.completed} / ${verificationStats.total} completed`;
+    }
+
+    function createResultItem(id, status = 'pending') {
+        const shortId = id.length > 20 ? id.substring(0, 20) + '...' : id;
+        const div = document.createElement('div');
+        div.id = `result-${id}`;
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 8px;';
+        div.innerHTML = `
+            <div>
+                <div style="font-weight: 500; color: var(--text-primary);">${shortId}</div>
+                <div id="status-${id}" style="font-size: 12px; color: var(--text-secondary);">Waiting...</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button onclick="cancelItem('${id}')" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                    <i class="fas fa-ban"></i> Cancel
+                </button>
+                <span id="badge-${id}" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 6px 12px; border-radius: 6px; font-size: 12px;">
+                    <i class="fas fa-clock"></i> pending
+                </span>
             </div>
         `;
-        // Make empty content visible again (remove any specific result list styles if added)
-        resultsBody.classList.add('empty-state');
-        resultsBody.style.display = 'flex'; // Reset display to flex for centering
-    });
+        resultItems[id] = { element: div, status: 'pending' };
+        return div;
+    }
+
+    function updateResultItem(id, status, message) {
+        const statusEl = document.getElementById(`status-${id}`);
+        const badgeEl = document.getElementById(`badge-${id}`);
+
+        if (!statusEl || !badgeEl) return;
+
+        statusEl.textContent = message || status;
+
+        if (status === 'success') {
+            badgeEl.style.background = 'rgba(34, 197, 94, 0.2)';
+            badgeEl.style.color = '#22c55e';
+            badgeEl.innerHTML = '<i class="fas fa-check"></i> success';
+            if (resultItems[id]?.status !== 'success') {
+                verificationStats.success++;
+                verificationStats.completed++;
+                resultItems[id].status = 'success';
+            }
+        } else if (status === 'failed' || status === 'error') {
+            badgeEl.style.background = 'rgba(239, 68, 68, 0.2)';
+            badgeEl.style.color = '#ef4444';
+            badgeEl.innerHTML = '<i class="fas fa-times"></i> failed';
+            if (resultItems[id]?.status !== 'failed') {
+                verificationStats.failed++;
+                verificationStats.completed++;
+                resultItems[id].status = 'failed';
+            }
+        } else if (status === 'processing') {
+            badgeEl.style.background = 'rgba(59, 130, 246, 0.2)';
+            badgeEl.style.color = '#3b82f6';
+            badgeEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> processing';
+        }
+
+        updateStatsUI();
+    }
+
+    // Cancel item (placeholder - would need backend support)
+    window.cancelItem = (id) => {
+        updateResultItem(id, 'failed', 'Cancelled by user');
+    };
 
     // Start Verification
     startBtn.addEventListener('click', async () => {
@@ -152,29 +225,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Parse IDs/URLs
         const verificationIds = text.split('\n')
             .map(line => line.trim())
-            .filter(line => line.length > 0)
-            .map(line => {
-                // Simple extraction logic: if contains URL, try extract ID? 
-                // For now send the line as is, backend or user assumes it's ID
-                return line;
-            });
+            .filter(line => line.length > 0);
 
-        if (verificationIds.length === 0) {
-            return;
-        }
+        if (verificationIds.length === 0) return;
+
+        // Reset stats
+        verificationStats = { success: 0, failed: 0, total: verificationIds.length, completed: 0 };
+        resultItems = {};
 
         // UI Prep
         startBtn.disabled = true;
         const originalBtnText = startBtn.innerHTML;
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
 
-        // Prepare Results Area
-        if (resultsBody.querySelector('.empty-content')) {
-            resultsBody.innerHTML = '<div class="results-list" style="width:100%; overflow-y:auto; max-height: 500px;"></div>';
-            resultsBody.classList.remove('empty-state');
-            resultsBody.style.display = 'block';
-        }
-        const listContainer = resultsBody.querySelector('.results-list');
+        // Show progress UI
+        emptyState.style.display = 'none';
+        progressSection.style.display = 'block';
+        resultsList.innerHTML = '';
+        updateStatsUI();
+
+        // Create pending items
+        verificationIds.forEach(id => {
+            resultsList.appendChild(createResultItem(id));
+        });
 
         try {
             const response = await fetch('/api/batch', {
@@ -190,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                // Try to get error text
                 let errorText = `Lỗi server: ${response.status}`;
                 try {
                     const errJson = await response.json();
@@ -212,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 buffer += chunk;
 
                 const lines = buffer.split('\n\n');
-                // Keep the last partial line in buffer
                 buffer = lines.pop();
 
                 for (const line of lines) {
@@ -220,26 +291,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         const jsonStr = line.replace('data: ', '');
                         try {
                             const data = JSON.parse(jsonStr);
-                            handleSSEData(data, listContainer);
+                            handleSSEData(data);
                         } catch (e) {
                             console.error('Error parsing SSE data', e);
                         }
                     }
                 }
             }
+
+            // Refresh quota after completion
+            refreshQuota();
+
         } catch (error) {
             console.error('Fetch error:', error);
-            const errDiv = document.createElement('div');
-            errDiv.className = 'result-item error';
-            errDiv.innerHTML = `<i class="fas fa-circle-exclamation" style="color:#ef4444; margin-right:8px;"></i> ${error.message}`;
-            errDiv.style.padding = '10px';
-            errDiv.style.color = '#ef4444';
-            listContainer.appendChild(errDiv);
+            alert('❌ ' + error.message);
         } finally {
             startBtn.disabled = false;
             startBtn.innerHTML = originalBtnText;
         }
     });
+
+    function handleSSEData(data) {
+        // Handle different data formats from upstream
+        if (data.verificationId) {
+            const id = data.verificationId;
+            const status = data.currentStep === 'success' ? 'success' :
+                (data.currentStep === 'error' || data.error) ? 'failed' : 'processing';
+            const message = data.message || data.currentStep || '';
+            updateResultItem(id, status, message);
+        } else if (data.error) {
+            console.error('SSE Error:', data.error);
+        } else if (data.completed !== undefined) {
+            // Batch completed event
+            console.log('Batch completed:', data);
+        }
+    }
 
     // Stats Polling
     async function refreshStats() {
