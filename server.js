@@ -151,7 +151,20 @@ app.get('/', (req, res) => {
 
 // API Routes
 
-// System Status
+// Debug: Check Redis Config (REMOVE IN PRODUCTION)
+app.get('/debug/redis-config', (req, res) => {
+  res.json({
+    USE_REDIS,
+    hasKV_URL: !!process.env.KV_REST_API_URL,
+    hasKV_TOKEN: !!process.env.KV_REST_API_TOKEN,
+    hasUPSTASH_URL: !!process.env.UPSTASH_REDIS_REST_URL,
+    hasUPSTASH_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+    redisUrl: redisUrl ? redisUrl.substring(0, 30) + '...' : null,
+    storageMode: USE_REDIS ? 'Redis' : 'Local File'
+  });
+});
+
+// Status Endpoint
 app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
