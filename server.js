@@ -18,6 +18,52 @@ const KEYS_FILE = path.join(__dirname, 'keys.json');
 const MASTER_KEY = process.env.MASTER_KEY;
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'admin123';
 
+// Upstream CSRF Cache
+let upstreamCsrfCache = {
+  token: null,
+  cookie: null,
+  expiry: 0
+};
+
+// Helper: Fetch Upstream CSRF Token & Cookies
+async function getUpstreamConfig() {
+  const now = Date.now();
+  if (upstreamCsrfCache.token && upstreamCsrfCache.expiry > now) {
+    return upstreamCsrfCache;
+  }
+
+  try {
+    console.log('🔄 Fetching fresh CSRF token from upstream...');
+    const response = await axios.get('https://neigui.1key.me/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 5000
+    });
+
+    const html = response.data;
+    const match = html.match(/window\.CSRF_TOKEN\s*=\s*["']([^"']+)["']/);
+    const token = match ? match[1] : null;
+
+    // Extract cookies
+    const setCookies = response.headers['set-cookie'];
+    const cookieHeader = setCookies ? setCookies.map(c => c.split(';')[0]).join('; ') : null;
+
+    if (token) {
+      console.log('✅ Upstream CSRF token acquired');
+      upstreamCsrfCache = {
+        token,
+        cookie: cookieHeader,
+        expiry: now + 20 * 60 * 1000 // Cache for 20 minutes
+      };
+      return upstreamCsrfCache;
+    }
+  } catch (error) {
+    console.error('❌ Error fetching upstream CSRF:', error.message);
+  }
+  return { token: null, cookie: null };
+}
+
 // Storage Adapter Strategy
 let storage;
 const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -264,18 +310,25 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     console.log(`Forwarding request for key ${hCaptchaToken} to upstream...`);
     console.log(`Using MASTER_KEY: ${MASTER_KEY ? 'SET' : 'NOT SET'}`);
 
+    // Fetch dynamic CSRF config
+    const upstreamConfig = await getUpstreamConfig();
+
     const response = await axios({
       method: 'post',
       url: 'https://neigui.1key.me/api/batch',
       data: {
         hCaptchaToken: MASTER_KEY || 'no-master-key-set',
         verificationIds: verificationIds,
+        useLucky: false,
+        programId: ""
       },
       responseType: 'stream',
       validateStatus: () => true,
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': MASTER_KEY || '',
+        'x-csrf-token': upstreamConfig.token || '',
+        'Cookie': upstreamConfig.cookie || '',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://neigui.1key.me/',
         'Origin': 'https://neigui.1key.me'
