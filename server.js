@@ -51,9 +51,13 @@ if (USE_REDIS) {
   };
 } else {
   console.log('📂 Storage Mode: Local File (keys.json)');
-  // Ensure file exists
-  if (!fs.existsSync(KEYS_FILE)) {
-    fs.writeFileSync(KEYS_FILE, JSON.stringify({ keys: {} }, null, 2));
+  // Ensure file exists (only works in writable environments)
+  try {
+    if (!fs.existsSync(KEYS_FILE)) {
+      fs.writeFileSync(KEYS_FILE, JSON.stringify({ keys: {} }, null, 2));
+    }
+  } catch (e) {
+    console.warn('⚠️ Cannot write keys.json (read-only filesystem). Redis is required for Vercel.');
   }
 
   storage = {
