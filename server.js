@@ -379,6 +379,16 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     return res.status(402).json({ error: 'Quota exceeded for this API Key' });
   }
 
+  // 1b. Check Master Key quota
+  const masterQuota = await getMasterQuota();
+  const masterRemaining = masterQuota.total - masterQuota.used;
+  if (masterRemaining < verificationIds.length) {
+    return res.status(503).json({
+      error: 'Hệ thống tạm hết quota. Vui lòng liên hệ Admin để nạp thêm.',
+      masterRemaining: masterRemaining
+    });
+  }
+
   // 2. Reserve Quota Immediately (Deduct upfront)
   await keysMutex.runExclusive(async () => {
     const freshKeys = await storage.load();
@@ -389,8 +399,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     }
   });
 
-  // 2b. Also deduct from Master Key quota
-  const masterQuota = await getMasterQuota();
+  // 2b. Also deduct from Master Key quota (reuse masterQuota from check above)
   masterQuota.used += verificationIds.length;
   await setMasterQuota(masterQuota);
   console.log(`✅ Master Key: used ${masterQuota.used}/${masterQuota.total}`);
