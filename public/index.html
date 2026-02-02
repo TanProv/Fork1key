@@ -254,34 +254,53 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                     </div>
                 </div>
                 <div class="card-body" style="padding: 20px;">
-                    <div class="faq-item"
-                        style="margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px;">
-                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-chevron-right"
-                                style="font-size: 0.8em; color: var(--accent-primary);"></i> Tại sao tôi cần xác minh?
-                        </h4>
-                        <p style="color: var(--text-secondary); font-size: 0.95em;">Xác minh giúp nâng cấp tài khoản của
-                            bạn lên Google AI Studio Pro/Enterprise để sử dụng Gemini 1.5 Pro với giới hạn cao hơn.</p>
+                    <!-- Warning Box from image -->
+                    <div
+                        style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: #856404;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+                        <span style="font-weight: 600; font-size: 0.95rem;">Nếu tác vụ thất bại, vui lòng lấy liên kết
+                            mới. Không nên gửi lại cùng một liên kết nhiều lần.</span>
                     </div>
+
+                    <!-- FAQ items from image -->
                     <div class="faq-item"
-                        style="margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px;">
-                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-chevron-right"
-                                style="font-size: 0.8em; color: var(--accent-primary);"></i> Tôi có thể sử dụng bao
-                            nhiêu ID cùng lúc?</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.95em;">Hệ thống cho phép bạn nhập nhiều ID
-                            cùng lúc (mỗi dòng một ID) để xác minh hàng loạt, giúp tiết kiệm thời gian.</p>
+                        style="margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
+                        <i class="fas fa-lightbulb" style="color: #fbbf24; margin-top: 4px;"></i>
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; flex: 1;">Vui lòng sao chép
+                            liên kết sheerid bằng cách nhấp chuột phải. <b>KHÔNG MỞ TRONG TRÌNH DUYỆT.</b></p>
+                        <i class="fas fa-chevron-down"
+                            style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 5px;"></i>
                     </div>
+
                     <div class="faq-item"
-                        style="margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px;">
-                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-chevron-right"
-                                style="font-size: 0.8em; color: var(--accent-primary);"></i> API Key lấy ở đâu?</h4>
+                        style="margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
+                        <i class="fas fa-lightbulb" style="color: #fbbf24; margin-top: 4px;"></i>
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; flex: 1;">Công việc của bạn
+                            có thể đã hết hạn hoặc thất bại. Vui lòng lấy lại liên kết SheerID mới.</p>
+                        <i class="fas fa-chevron-down"
+                            style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 5px;"></i>
+                    </div>
+
+                    <div class="faq-item"
+                        style="margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
+                        <i class="fas fa-lightbulb" style="color: #fbbf24; margin-top: 4px;"></i>
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; flex: 1;">Yêu cầu thất bại:
+                            <b>400 Bad Request từ phương thức POST</b></p>
+                        <i class="fas fa-chevron-down"
+                            style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 5px;"></i>
+                    </div>
+
+                    <!-- Keep the original important ones? 
+                         User said "bỏ 2 cái" (Why need verify? and How many ID?) and "thêm 3 cái trong ảnh".
+                         I'll append the remaining ones after the new ones. -->
+
+                    <div class="faq-item"
+                        style="margin-bottom: 15px; border-top: 1px solid var(--card-border); padding-top: 15px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-key"
+                                style="font-size: 0.8em; color: var(--accent-primary); margin-right: 8px;"></i> API Key
+                            lấy ở đâu?</h4>
                         <p style="color: var(--text-secondary); font-size: 0.95em;">Vui lòng liên hệ Admin để nhận mã
                             API Key hợp lệ cho việc sử dụng công cụ xác minh này.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-chevron-right"
-                                style="font-size: 0.8em; color: var(--accent-primary);"></i> Nếu xác minh thất bại?</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.95em;">Hệ thống có cơ chế "Smart Refund" -
-                            nếu xác minh thất bại, lượt quota của bạn sẽ được hoàn lại tự động.</p>
                     </div>
                 </div>
             </div>
