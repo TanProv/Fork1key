@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             loadKeys(data.keys || data);
 
+            // Load Master Quota
+            loadMasterQuota();
+
         } catch (error) {
             console.error(error);
             alert('Có lỗi xảy ra: ' + error.message);
@@ -193,8 +196,62 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/admin/keys?secret=${adminSecret}`);
             const data = await response.json();
             loadKeys(data.keys || data);
+            loadMasterQuota();
         } catch (e) { }
         refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
     });
 
+    // Master Quota Functions
+    async function loadMasterQuota() {
+        try {
+            const res = await fetch(`/admin/master-quota?secret=${adminSecret}`);
+            if (res.ok) {
+                const data = await res.json();
+                const remaining = data.total - data.used;
+                document.getElementById('masterRemaining').textContent = remaining;
+                document.getElementById('masterTotal').textContent = data.total;
+
+                // Color coding
+                const elem = document.getElementById('masterRemaining');
+                if (remaining < 10) elem.style.color = '#ef4444';
+                else if (remaining < 50) elem.style.color = '#f59e0b';
+                else elem.style.color = '#22c55e';
+            }
+        } catch (e) {
+            console.error('Master quota load error:', e);
+        }
+    }
+
+    // Edit Master Quota Button
+    document.getElementById('editMasterQuotaBtn').addEventListener('click', async () => {
+        const currentTotal = document.getElementById('masterTotal').textContent;
+        const currentRemaining = document.getElementById('masterRemaining').textContent;
+
+        const newTotal = prompt('Nhập TỔNG quota Master Key (sau khi mua thêm):', currentTotal);
+        if (newTotal === null) return;
+
+        const currentUsed = parseInt(currentTotal) - parseInt(currentRemaining);
+        const newUsed = prompt('Nhập số đã DÙNG (hoặc để trống để giữ nguyên):', currentUsed);
+
+        try {
+            const res = await fetch('/admin/master-quota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    secret: adminSecret,
+                    total: parseInt(newTotal),
+                    used: newUsed !== null && newUsed !== '' ? parseInt(newUsed) : undefined
+                })
+            });
+
+            if (res.ok) {
+                loadMasterQuota();
+                alert('✅ Đã cập nhật Master Quota!');
+            } else {
+                alert('❌ Lỗi cập nhật!');
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    });
 });

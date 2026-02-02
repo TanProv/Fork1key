@@ -129,6 +129,25 @@ if (USE_REDIS) {
   };
 }
 
+// Master Key Quota Helpers
+async function getMasterQuota() {
+  if (USE_REDIS && storage.redis) {
+    const data = await storage.redis.get('master_quota');
+    return data || { total: 13, used: 0 };
+  } else {
+    // Use global for local
+    return global.masterQuota || { total: 13, used: 0 };
+  }
+}
+
+async function setMasterQuota(quota) {
+  if (USE_REDIS && storage.redis) {
+    await storage.redis.set('master_quota', quota);
+  } else {
+    global.masterQuota = quota;
+  }
+}
+
 // Generate CSRF token (fixed for Vercel serverless)
 const CSRF_TOKEN = process.env.CSRF_TOKEN || 'vercel-csrf-token-' + (process.env.VERCEL_GIT_COMMIT_SHA || 'local');
 
@@ -281,6 +300,28 @@ app.get('/admin/keys', async (req, res) => {
   res.json({ keys });
 });
 
+// Admin: Get Master Quota
+app.get('/admin/master-quota', async (req, res) => {
+  const { secret } = req.query;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+  const quota = await getMasterQuota();
+  res.json(quota);
+});
+
+// Admin: Update Master Quota
+app.post('/admin/master-quota', async (req, res) => {
+  const { secret, total, used } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  const current = await getMasterQuota();
+  const updated = {
+    total: total !== undefined ? parseInt(total) : current.total,
+    used: used !== undefined ? parseInt(used) : current.used
+  };
+  await setMasterQuota(updated);
+  res.json({ success: true, quota: updated });
+});
+
 // User: Get Quota (for realtime display)
 app.get('/api/user/quota', async (req, res) => {
   const { key } = req.query;
@@ -347,6 +388,12 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       console.log(`✅ Reserved ${verificationIds.length} quota for key ${hCaptchaToken}`);
     }
   });
+
+  // 2b. Also deduct from Master Key quota
+  const masterQuota = await getMasterQuota();
+  masterQuota.used += verificationIds.length;
+  await setMasterQuota(masterQuota);
+  console.log(`✅ Master Key: used ${masterQuota.used}/${masterQuota.total}`);
 
   // 3. Prepare Proxy Request
   res.setHeader('Content-Type', 'text/event-stream');
