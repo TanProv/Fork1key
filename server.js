@@ -326,8 +326,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       validateStatus: () => true,
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': MASTER_KEY || '',
-        'x-csrf-token': upstreamConfig.token || '',
+        'X-CSRF-Token': upstreamConfig.token || '',
         'Cookie': upstreamConfig.cookie || '',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://neigui.1key.me/',
@@ -336,6 +335,14 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     });
 
     console.log(`Upstream responded with status: ${response.status}`);
+
+    if (response.status === 400) {
+      let errorData = '';
+      response.data.on('data', chunk => { errorData += chunk; });
+      response.data.on('end', () => {
+        console.error('❌ Upstream 400 Error Body:', errorData);
+      });
+    }
 
     // 3. Update Quota (deduct all initially)
     if (response.status === 200) {
