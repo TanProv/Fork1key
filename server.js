@@ -262,6 +262,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
 
   try {
     console.log(`Forwarding request for key ${hCaptchaToken} to upstream...`);
+    console.log(`Using MASTER_KEY: ${MASTER_KEY ? 'SET' : 'NOT SET'}`);
 
     const response = await axios({
       method: 'post',
@@ -273,6 +274,8 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       responseType: 'stream',
       validateStatus: () => true,
       headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': MASTER_KEY || '',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://neigui.1key.me/',
         'Origin': 'https://neigui.1key.me'
