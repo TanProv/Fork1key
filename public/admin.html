@@ -158,14 +158,22 @@
                 <h2>Hệ Thống Quản Lý Proxy</h2>
             </div>
             <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
-                <!-- Master Quota Widget -->
+                <!-- Master Quota Inventory Widget -->
                 <div id="masterQuotaWidget"
                     style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-size: 13px;">
-                    <i class="fas fa-server" style="color: #f59e0b;"></i>
-                    <span style="color: var(--text-secondary);">Master Key:</span>
-                    <span id="masterRemaining" style="font-weight: bold; color: #22c55e;">...</span>
-                    <span style="color: var(--text-secondary);">/</span>
-                    <span id="masterTotal" style="color: var(--text-secondary);">...</span>
+                    <div title="Tổng số lượng trong kho">
+                        <i class="fas fa-warehouse" style="color: #3b82f6;"></i>
+                        <span style="color: var(--text-secondary);">Kho:</span>
+                        <span id="masterInventory" style="font-weight: bold; color: #fff;">...</span>
+                    </div>
+                    <div style="width: 1px; height: 15px; background: var(--card-border);"></div>
+                    <div title="Số lượng đã trích ra cấp cho User">
+                        <i class="fas fa-server" style="color: #f59e0b;"></i>
+                        <span style="color: var(--text-secondary);">Pool:</span>
+                        <span id="masterRemaining" style="font-weight: bold; color: #22c55e;">...</span>
+                        <span style="color: var(--text-secondary);">/</span>
+                        <span id="masterTotal" style="color: var(--text-secondary);">...</span>
+                    </div>
                     <button id="editMasterQuotaBtn"
                         style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 2px 6px;">
                         <i class="fas fa-edit"></i>

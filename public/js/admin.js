@@ -210,9 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/admin/master-quota?secret=${adminSecret}`);
             if (res.ok) {
                 const data = await res.json();
-                const remaining = data.total - data.used;
-                document.getElementById('masterRemaining').textContent = remaining;
-                document.getElementById('masterTotal').textContent = data.total;
+                const remaining = data.public_limit - data.used;
+
+                document.getElementById('masterInventory').textContent = (data.inventory || 0).toLocaleString();
+                document.getElementById('masterRemaining').textContent = Math.max(0, remaining).toLocaleString();
+                document.getElementById('masterTotal').textContent = (data.public_limit || 0).toLocaleString();
+
+                window.currentMasterQuota = data;
 
                 // Color coding
                 const elem = document.getElementById('masterRemaining');
@@ -227,29 +231,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Edit Master Quota Button
     document.getElementById('editMasterQuotaBtn').addEventListener('click', async () => {
-        const currentTotal = document.getElementById('masterTotal').textContent;
-        const currentRemaining = document.getElementById('masterRemaining').textContent;
+        const q = window.currentMasterQuota || { inventory: 0, public_limit: 0, used: 0 };
 
-        const newTotal = prompt('Nhập TỔNG quota Master Key (sau khi mua thêm):', currentTotal);
-        if (newTotal === null) return;
+        const newInventory = prompt('📦 NHẬP TỔNG KHO (Số lượng Key bạn đang có):', q.inventory);
+        if (newInventory === null) return;
 
-        const currentUsed = parseInt(currentTotal) - parseInt(currentRemaining);
-        const newUsed = prompt('Nhập số đã DÙNG (hoặc để trống để giữ nguyên):', currentUsed);
+        const newPublicLimit = prompt('🚀 TRÍCH RA BAO NHIÊU (Số lượng cấp cho User sử dụng):', q.public_limit);
+        if (newPublicLimit === null) return;
+
+        const resetUsed = confirm('Bạn có muốn RESET số lượng ĐÃ DÙNG về 0 không?\n(Chọn Cancel nếu muốn giữ nguyên tiến trình hiện tại)');
+
+        const body = {
+            secret: adminSecret,
+            inventory: parseInt(newInventory),
+            publicLimit: parseInt(newPublicLimit)
+        };
+
+        if (resetUsed) body.used = 0;
 
         try {
             const res = await fetch('/admin/master-quota', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    secret: adminSecret,
-                    total: parseInt(newTotal),
-                    used: newUsed !== null && newUsed !== '' ? parseInt(newUsed) : undefined
-                })
+                body: JSON.stringify(body)
             });
 
             if (res.ok) {
                 loadMasterQuota();
-                alert('✅ Đã cập nhật Master Quota!');
+                alert('✅ Đã cập nhật Kho và Pool thành công!');
             } else {
                 alert('❌ Lỗi cập nhật!');
             }

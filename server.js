@@ -132,20 +132,28 @@ if (USE_REDIS) {
 // Master Key Quota Helpers
 async function getMasterQuota() {
   if (USE_REDIS && storage.redis) {
-    const total = await storage.redis.get('master_quota_total') || 13;
+    const inventory = await storage.redis.get('master_inventory') || 13;
+    const publicLimit = await storage.redis.get('master_public_limit') || 13;
     const used = await storage.redis.get('master_quota_used') || 0;
-    return { total: parseInt(total), used: parseInt(used) };
+    return {
+      inventory: parseInt(inventory),
+      public_limit: parseInt(publicLimit),
+      used: parseInt(used),
+      total: parseInt(publicLimit) // Legacy bridge
+    };
   } else {
-    return global.masterQuota || { total: 13, used: 0 };
+    return global.masterQuota || { inventory: 13, public_limit: 13, used: 0, total: 13 };
   }
 }
 
 async function setMasterQuota(quota) {
   if (USE_REDIS && storage.redis) {
-    await storage.redis.set('master_quota_total', quota.total);
-    await storage.redis.set('master_quota_used', quota.used);
+    if (quota.inventory !== undefined) await storage.redis.set('master_inventory', quota.inventory);
+    if (quota.public_limit !== undefined) await storage.redis.set('master_public_limit', quota.public_limit);
+    if (quota.used !== undefined) await storage.redis.set('master_quota_used', quota.used);
   } else {
-    global.masterQuota = quota;
+    global.masterQuota = { ...global.masterQuota, ...quota };
+    global.masterQuota.total = global.masterQuota.public_limit; // Sync legacy
   }
 }
 
@@ -427,16 +435,18 @@ app.get('/admin/master-quota', async (req, res) => {
 
 // Admin: Update Master Quota
 app.post('/admin/master-quota', async (req, res) => {
-  const { secret, total, used } = req.body;
+  const { secret, total, used, inventory, publicLimit } = req.body;
   if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
 
-  const current = await getMasterQuota();
-  const updated = {
-    total: total !== undefined ? parseInt(total) : current.total,
-    used: used !== undefined ? parseInt(used) : current.used
-  };
+  const updated = {};
+  if (inventory !== undefined) updated.inventory = parseInt(inventory);
+  if (publicLimit !== undefined) updated.public_limit = parseInt(publicLimit);
+  if (used !== undefined) updated.used = parseInt(used);
+  if (total !== undefined) updated.public_limit = parseInt(total); // Legacy support
+
   await setMasterQuota(updated);
-  res.json({ success: true, quota: updated });
+  const final = await getMasterQuota();
+  res.json({ success: true, quota: final });
 });
 
 // User: Get Quota (for realtime display)
@@ -503,12 +513,12 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     return res.status(402).json({ error: 'Quota exceeded for this API Key' });
   }
 
-  // 1b. Check Master Key quota
+  // 1b. Check Master Key quota pool (Public Limit)
   const masterQuota = await getMasterQuota();
-  const masterRemaining = masterQuota.total - masterQuota.used;
+  const masterRemaining = masterQuota.public_limit - masterQuota.used;
   if (masterRemaining < verificationIds.length) {
     return res.status(503).json({
-      error: 'Hệ thống tạm hết quota. Vui lòng liên hệ Admin để nạp thêm.',
+      error: 'Hệ thống tạm hết quota công cộng. Vui lòng liên hệ Admin để nạp thêm.',
       masterRemaining: masterRemaining
     });
   }
