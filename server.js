@@ -79,6 +79,7 @@ if (USE_REDIS) {
   });
 
   storage = {
+    redis: redis, // Expose for stats
     load: async () => {
       try {
         const data = await redis.get('keys');
@@ -280,6 +281,26 @@ app.get('/admin/keys', async (req, res) => {
   res.json({ keys });
 });
 
+// User: Get Quota (for realtime display)
+app.get('/api/user/quota', async (req, res) => {
+  const { key } = req.query;
+  if (!key) return res.status(400).json({ error: 'API Key required' });
+
+  const keys = await storage.load();
+  const keyData = keys[key];
+
+  if (!keyData) {
+    return res.status(404).json({ error: 'Key not found' });
+  }
+
+  res.json({
+    quota: keyData.quota,
+    used: keyData.used,
+    remaining: keyData.quota - keyData.used,
+    active: keyData.active
+  });
+});
+
 // Batch Verification (Proxy)
 app.post('/api/batch', validateCsrf, async (req, res) => {
   let { hCaptchaToken, verificationIds } = req.body;
@@ -317,7 +338,17 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     return res.status(402).json({ error: 'Quota exceeded for this API Key' });
   }
 
-  // 2. Prepare Proxy Request
+  // 2. Reserve Quota Immediately (Deduct upfront)
+  await keysMutex.runExclusive(async () => {
+    const freshKeys = await storage.load();
+    if (freshKeys[hCaptchaToken]) {
+      freshKeys[hCaptchaToken].used += verificationIds.length;
+      await storage.save(freshKeys);
+      console.log(`✅ Reserved ${verificationIds.length} quota for key ${hCaptchaToken}`);
+    }
+  });
+
+  // 3. Prepare Proxy Request
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -360,17 +391,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       });
     }
 
-    // 3. Update Quota (deduct all initially)
-    if (response.status === 200) {
-      await keysMutex.runExclusive(async () => {
-        // Reload strict to avoid race
-        const freshKeys = await storage.load();
-        if (freshKeys[hCaptchaToken]) {
-          freshKeys[hCaptchaToken].used += verificationIds.length;
-          await storage.save(freshKeys);
-        }
-      });
-    }
+    // 4. Stream Response & Track Failures
 
     let failedCount = 0;
     let streamBuffer = '';
@@ -416,11 +437,88 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       res.end();
     });
 
+    // 4. Update Stats (Async)
+    updateStats(response.status === 200).catch(e => console.error('Stats Update Error:', e));
+
   } catch (error) {
-    console.error('Proxy Error:', error.message);
-    res.write(`event: error\ndata: {"message": "Proxy connection failed. Check logs."}\n\n`);
-    res.end();
+    if (!res.headersSent) {
+      if (axios.isAxiosError(error)) {
+        const errorData = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.error('Upstream Proxy Error:', error.message);
+        res.status(error.response?.status || 502).json({ error: 'Upstream Error', details: errorData });
+      } else {
+        console.error('Proxy Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    }
+    // Update Stats as fail
+    updateStats(false).catch(e => console.error('Stats Update Error:', e));
   }
+});
+
+// Stats: Helper to track success/fail events
+// Uses Redis Sorted Set (ZSET) to store events by timestamp
+// Key: stats_events
+// Score: timestamp
+// Member: timestamp:status:random
+async function updateStats(isSuccess) {
+  const now = Date.now();
+  const status = isSuccess ? '1' : '0';
+  const member = `${now}:${status}:${Math.random().toString(36).substring(7)}`;
+
+  if (USE_REDIS && storage.redis) { // Assuming we expose redis instance or use global
+    // We need access to the `redis` instance created in the IF block above.
+    // To fix this, I'll move `redis` to a broader scope or re-instantiate if needed, 
+    // but better to just attach it to `storage` object which is accessible.
+    // Checking line 30 in original file... yes, I need to make sure I can access it.
+    await storage.redis.zadd('stats_events', { score: now, member });
+    // Cleanup old (> 10 mins)
+    const tenMinsAgo = now - 10 * 60 * 1000;
+    await storage.redis.zremrangebyscore('stats_events', 0, tenMinsAgo);
+  } else {
+    // Local memory fallback (not persistent across Vercel restarts, but fine for local)
+    if (!global.localStats) global.localStats = [];
+    global.localStats.push({ ts: now, success: isSuccess });
+    // Cleanup
+    const tenMinsAgo = now - 10 * 60 * 1000;
+    global.localStats = global.localStats.filter(e => e.ts > tenMinsAgo);
+  }
+}
+
+// Stats: Endpoint
+app.get('/api/stats/recent', async (req, res) => {
+  const now = Date.now();
+  const tenMinsAgo = now - 10 * 60 * 1000;
+  let success = 0;
+  let fail = 0;
+
+  if (USE_REDIS && storage.redis) {
+    try {
+      // Get all events in last 10 mins
+      const events = await storage.redis.zrange('stats_events', tenMinsAgo, now, { byScore: true });
+      events.forEach(member => { // member format: timestamp:status:random
+        if (typeof member === 'string') {
+          const parts = member.split(':');
+          if (parts[1] === '1') success++;
+          else fail++;
+        }
+      });
+    } catch (e) {
+      console.error('Redis Stats Error:', e);
+    }
+  } else {
+    // Local
+    if (global.localStats) {
+      global.localStats.forEach(s => {
+        if (s.ts > tenMinsAgo) {
+          if (s.success) success++;
+          else fail++;
+        }
+      });
+    }
+  }
+
+  res.json({ success, fail });
 });
 
 if (process.env.NODE_ENV !== 'test') {

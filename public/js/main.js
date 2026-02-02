@@ -45,7 +45,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (apiKey) {
         apiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Đã có API Key';
         apiKeyBtn.classList.add('set');
+        refreshQuota(); // Load quota immediately
     }
+
+    // Quota Refresh Function
+    async function refreshQuota() {
+        if (!apiKey) {
+            document.getElementById('quotaDisplay').style.display = 'none';
+            return;
+        }
+        try {
+            const res = await fetch(`/api/user/quota?key=${encodeURIComponent(apiKey)}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('quotaRemaining').textContent = data.remaining.toLocaleString();
+                document.getElementById('quotaTotal').textContent = data.quota.toLocaleString();
+                document.getElementById('quotaDisplay').style.display = 'flex';
+                document.getElementById('quotaDisplay').style.alignItems = 'center';
+                document.getElementById('quotaDisplay').style.gap = '6px';
+
+                // Color coding
+                const remaining = data.remaining;
+                const quotaElem = document.getElementById('quotaRemaining');
+                if (remaining < 10) {
+                    quotaElem.style.color = '#ef4444';
+                } else if (remaining < 100) {
+                    quotaElem.style.color = '#f59e0b';
+                } else {
+                    quotaElem.style.color = '#22c55e';
+                }
+            } else {
+                document.getElementById('quotaDisplay').style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Quota fetch error:', e);
+        }
+    }
+
+    // Poll quota every 5 seconds
+    setInterval(refreshQuota, 5000);
 
     apiKeyBtn.addEventListener('click', () => {
         const input = prompt('Nhập API Key / HCaptcha Token của bạn:', apiKey);
@@ -55,9 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (apiKey) {
                 apiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Đã có API Key';
                 apiKeyBtn.classList.add('set');
+                refreshQuota(); // Refresh immediately after setting
             } else {
                 apiKeyBtn.innerHTML = '<i class="fas fa-key"></i> Đặt API Key';
                 apiKeyBtn.classList.remove('set');
+                document.getElementById('quotaDisplay').style.display = 'none';
             }
         }
     });
@@ -201,27 +241,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function handleSSEData(data, container) {
-        if (data.total && data.current_quota) {
-            // Start event info
-            const infoDiv = document.createElement('div');
-            infoDiv.style.padding = '10px';
-            infoDiv.style.borderBottom = '1px solid var(--card-border)';
-            infoDiv.style.color = '#3b82f6';
-            infoDiv.innerHTML = `<i class="fas fa-info-circle"></i> Bắt đầu: ${data.total} mục (Chi phí: ${data.cost})`;
-            container.appendChild(infoDiv);
-            return;
+    // Stats Polling
+    async function refreshStats() {
+        try {
+            const res = await fetch('/api/stats/recent');
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('statsSuccess').textContent = data.success;
+                document.getElementById('statsFail').textContent = data.fail;
+            }
+        } catch (e) {
+            console.error('Stats fetch error:', e);
         }
+    }
+    // Poll every 30s
+    refreshStats();
+    setInterval(refreshStats, 30000);
 
-        if (data.completed) {
-            // End event
-            const endDiv = document.createElement('div');
-            endDiv.style.padding = '10px';
-            endDiv.style.color = '#22c55e';
-            endDiv.innerHTML = `<i class="fas fa-check-circle"></i> Hoàn thành: ${data.completed}/${data.total}`;
-            container.appendChild(endDiv);
-            return;
-        }
+    function handleSSEData(data, container) {
 
         if (data.verificationId) {
             // Item result

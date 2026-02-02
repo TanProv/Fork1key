@@ -89,7 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="width: ${percent}%; height: 100%; background: ${progressBarColor}; border-radius: 2px;"></div>
                     </div>
                 </td>
-                <td>${info.quota}</td>
+                <td style="font-weight: bold; color: ${info.quota - info.used < 100 ? '#ef4444' : 'var(--text-primary)'}">
+                    ${(info.quota - info.used).toLocaleString()}
+                </td>
+                <td>${info.quota.toLocaleString()}</td>
                 <td>
                     <span class="badge ${info.active ? 'badge-active' : 'badge-inactive'}">
                         ${info.active ? 'Active' : 'Locked'}
