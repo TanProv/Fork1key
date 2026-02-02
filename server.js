@@ -93,10 +93,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Security: Rate Limiting
+// Security: Rate Limiting (Vercel-compatible)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Use X-Forwarded-For for Vercel
+  keyGenerator: (req) => {
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  },
   message: { error: 'Too many requests from this IP, please try again later.' }
 });
 app.use(limiter);
@@ -104,6 +110,11 @@ app.use(limiter);
 const adminLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  },
   message: { error: 'Too many admin attempts, please try again later.' }
 });
 app.use('/admin/', adminLimiter);
