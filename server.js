@@ -20,13 +20,15 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET || 'admin123';
 
 // Storage Adapter Strategy
 let storage;
-const USE_REDIS = !!process.env.KV_REST_API_URL;
+const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const USE_REDIS = !!redisUrl && !!redisToken;
 
 if (USE_REDIS) {
   console.log('☁️ Storage Mode: Redis (Upstash)');
   const redis = new Redis({
-    url: process.env.KV_REST_API_URL,
-    token: process.env.KV_REST_API_TOKEN,
+    url: redisUrl,
+    token: redisToken,
   });
 
   storage = {
@@ -308,8 +310,12 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Proxy Server running on http://localhost:${PORT}`);
-  console.log(`🔑 Master Key Configured: ${MASTER_KEY ? 'YES' : 'NO'}`);
-  if (!MASTER_KEY) console.warn('⚠️ WARNING: MASTER_KEY is not set in .env! Proxy will fail.');
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Proxy Server running on http://localhost:${PORT}`);
+    console.log(`🔑 Master Key Configured: ${MASTER_KEY ? 'YES' : 'NO'}`);
+    if (!MASTER_KEY) console.warn('⚠️ WARNING: MASTER_KEY is not set in .env! Proxy will fail.');
+  });
+}
+
+module.exports = app;
