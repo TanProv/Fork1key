@@ -20,16 +20,11 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET || 'admin123';
 
 // Storage Adapter Strategy
 let storage;
-const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const USE_REDIS = !!redisUrl && !!redisToken;
+const USE_REDIS = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
 if (USE_REDIS) {
   console.log('☁️ Storage Mode: Redis (Upstash)');
-  const redis = new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
+  const redis = Redis.fromEnv();
 
   storage = {
     load: async () => {
@@ -155,11 +150,9 @@ app.get('/', (req, res) => {
 app.get('/debug/redis-config', (req, res) => {
   res.json({
     USE_REDIS,
-    hasKV_URL: !!process.env.KV_REST_API_URL,
-    hasKV_TOKEN: !!process.env.KV_REST_API_TOKEN,
     hasUPSTASH_URL: !!process.env.UPSTASH_REDIS_REST_URL,
     hasUPSTASH_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-    redisUrl: redisUrl ? redisUrl.substring(0, 30) + '...' : null,
+    upstashUrl: process.env.UPSTASH_REDIS_REST_URL ? process.env.UPSTASH_REDIS_REST_URL.substring(0, 30) + '...' : null,
     storageMode: USE_REDIS ? 'Redis' : 'Local File'
   });
 });
