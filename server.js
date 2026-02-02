@@ -120,8 +120,12 @@ const adminLimiter = rateLimit({
 });
 app.use('/admin/', adminLimiter);
 
-// CSRF validation middleware
+// CSRF validation middleware (disabled for Vercel serverless)
 const validateCsrf = (req, res, next) => {
+  // Skip CSRF validation on Vercel (serverless doesn't support stateful CSRF tokens)
+  if (process.env.VERCEL) {
+    return next();
+  }
   const token = req.headers['x-csrf-token'];
   if (token !== CSRF_TOKEN) {
     return res.status(403).json({ error: 'Invalid CSRF token' });
