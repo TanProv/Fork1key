@@ -282,11 +282,27 @@ app.get('/admin/keys', async (req, res) => {
 
 // Batch Verification (Proxy)
 app.post('/api/batch', validateCsrf, async (req, res) => {
-  const { hCaptchaToken, verificationIds } = req.body;
+  let { hCaptchaToken, verificationIds } = req.body;
 
   if (!hCaptchaToken || !verificationIds || !Array.isArray(verificationIds)) {
     return res.status(400).json({ error: 'Invalid request body' });
   }
+
+  // Auto-extract IDs from URLs
+  verificationIds = verificationIds.map(id => {
+    // Check if it's a URL
+    if (id.includes('verificationId=')) {
+      const match = id.match(/verificationId=([a-f0-9]{24})/);
+      return match ? match[1] : id;
+    }
+    // Fallback: Check if it's already a 24-char hex
+    if (/^[a-f0-9]{24}$/i.test(id)) {
+      return id;
+    }
+    // Deep fallback: try to find any 24-char hex sequence
+    const deepMatch = id.match(/([a-f0-9]{24})/);
+    return deepMatch ? deepMatch[1] : id;
+  });
 
   // 1. Validate Local Key
   // Note: We load keys just to check, separate from quota deduction to be fast
