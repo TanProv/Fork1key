@@ -102,7 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </span>
                 </td>
                 <td>
-                    <button class="btn-icon-text" onclick="deleteKey('${key}')" style="color: #ef4444; border: 1px solid #ef444433; padding: 4px 8px;">
+                    <button class="btn-icon-text" onclick="topupKey('${key}')" style="color: #22c55e; border: 1px solid #22c55e33; padding: 4px 8px; margin-right: 5px;" title="Nạp thêm quota">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn-icon-text" onclick="deleteKey('${key}')" style="color: #ef4444; border: 1px solid #ef444433; padding: 4px 8px;" title="Xóa key">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -253,5 +256,95 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             alert('❌ Lỗi: ' + e.message);
         }
+    });
+
+    // Bulk Key Generation
+    document.getElementById('bulkGenerateBtn').addEventListener('click', async () => {
+        const prefix = document.getElementById('keyPrefix').value.trim() || 'bulk';
+        const quota = parseInt(document.getElementById('keyQuota').value) || 1000;
+        const count = parseInt(document.getElementById('bulkCount').value) || 5;
+
+        if (!confirm(`Bạn sắp tạo ${count} key với prefix "${prefix}" và quota ${quota} mỗi key. Tiếp tục?`)) return;
+
+        try {
+            const res = await fetch('/admin/bulk-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: adminSecret, prefix, quota, count })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const keysList = data.keys.map(k => k.key).join('\n');
+                codeResult.textContent = keysList;
+                newKeyResult.style.display = 'block';
+
+                // Refresh keys list
+                const response = await fetch(`/admin/keys?secret=${adminSecret}`);
+                const keysData = await response.json();
+                loadKeys(keysData.keys || keysData);
+                loadMasterQuota();
+
+                alert(`✅ Đã tạo ${data.count} key thành công!`);
+            } else {
+                alert('❌ Lỗi tạo key hàng loạt!');
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    });
+
+    // Top-up key quota
+    window.topupKey = async (key) => {
+        const addQuota = prompt(`Nhập số quota muốn NẠP THÊM cho key:\n${key}`, '100');
+        if (addQuota === null || addQuota === '') return;
+
+        try {
+            const res = await fetch('/admin/topup-quota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: adminSecret, key, addQuota: parseInt(addQuota) })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(`✅ Đã nạp thêm ${addQuota} quota!\nTổng: ${data.newQuota} | Còn: ${data.remaining}`);
+
+                // Refresh
+                const response = await fetch(`/admin/keys?secret=${adminSecret}`);
+                const keysData = await response.json();
+                loadKeys(keysData.keys || keysData);
+            } else {
+                alert('❌ Lỗi nạp quota!');
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    };
+
+    // Search/Filter keys
+    let allKeysData = {};
+    const originalLoadKeys = loadKeys;
+
+    // Override loadKeys to store data
+    loadKeys = function (data) {
+        allKeysData = data;
+        originalLoadKeys(data);
+    };
+
+    document.getElementById('keySearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            originalLoadKeys(allKeysData);
+            return;
+        }
+
+        const filtered = {};
+        Object.entries(allKeysData).forEach(([key, info]) => {
+            if (key.toLowerCase().includes(query)) {
+                filtered[key] = info;
+            }
+        });
+        originalLoadKeys(filtered);
     });
 });

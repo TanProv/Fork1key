@@ -274,6 +274,63 @@ app.post('/admin/generate-key', async (req, res) => {
   });
 });
 
+// Admin: Bulk Generate Keys
+app.post('/admin/bulk-generate', async (req, res) => {
+  const { secret, quota, prefix, count } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  const keyCount = Math.min(parseInt(count) || 1, 50); // Max 50 at once
+  const keyPrefix = prefix || 'bulk';
+  const keyQuota = parseInt(quota) || 1000;
+
+  const generatedKeys = [];
+
+  await keysMutex.runExclusive(async () => {
+    const keys = await storage.load();
+
+    for (let i = 0; i < keyCount; i++) {
+      const newKey = keyPrefix + '_' + generateComplexKey(32);
+      keys[newKey] = {
+        quota: keyQuota,
+        used: 0,
+        active: true,
+        created_at: new Date().toISOString()
+      };
+      generatedKeys.push({ key: newKey, quota: keyQuota });
+    }
+
+    await storage.save(keys);
+  });
+
+  res.json({ success: true, count: generatedKeys.length, keys: generatedKeys });
+});
+
+// Admin: Top-up Quota for existing key
+app.post('/admin/topup-quota', async (req, res) => {
+  const { secret, key, addQuota } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+  if (!key || !addQuota) return res.status(400).json({ error: 'Key and addQuota required' });
+
+  await keysMutex.runExclusive(async () => {
+    const keys = await storage.load();
+
+    if (!keys[key]) {
+      return res.status(404).json({ error: 'Key not found' });
+    }
+
+    keys[key].quota += parseInt(addQuota);
+    await storage.save(keys);
+
+    res.json({
+      success: true,
+      key: key,
+      newQuota: keys[key].quota,
+      used: keys[key].used,
+      remaining: keys[key].quota - keys[key].used
+    });
+  });
+});
+
 // Admin: Delete Key
 app.delete('/admin/delete-key', async (req, res) => {
   const { secret, key } = req.body;
