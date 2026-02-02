@@ -132,24 +132,72 @@ if (USE_REDIS) {
 // Master Key Quota Helpers
 async function getMasterQuota() {
   if (USE_REDIS && storage.redis) {
-    const data = await storage.redis.get('master_quota');
-    return data || { total: 13, used: 0 };
+    const total = await storage.redis.get('master_quota_total') || 13;
+    const used = await storage.redis.get('master_quota_used') || 0;
+    return { total: parseInt(total), used: parseInt(used) };
   } else {
-    // Use global for local
     return global.masterQuota || { total: 13, used: 0 };
   }
 }
 
 async function setMasterQuota(quota) {
   if (USE_REDIS && storage.redis) {
-    await storage.redis.set('master_quota', quota);
+    await storage.redis.set('master_quota_total', quota.total);
+    await storage.redis.set('master_quota_used', quota.used);
   } else {
     global.masterQuota = quota;
   }
 }
 
-// Generate CSRF token (fixed for Vercel serverless)
-const CSRF_TOKEN = process.env.CSRF_TOKEN || 'vercel-csrf-token-' + (process.env.VERCEL_GIT_COMMIT_SHA || 'local');
+// Quota Helpers with Atomic support
+async function getUsedCount(key) {
+  if (USE_REDIS && storage.redis) {
+    const fromUsage = await storage.redis.hget('key_usage', key) || 0;
+    return parseInt(fromUsage);
+  } else {
+    const keys = await storage.load();
+    return keys[key]?.used || 0;
+  }
+}
+
+async function deductQuota(key, amount) {
+  if (USE_REDIS && storage.redis) {
+    await storage.redis.hincrby('key_usage', key, amount);
+    await storage.redis.incrby('master_quota_used', amount);
+  } else {
+    await keysMutex.runExclusive(async () => {
+      const keys = await storage.load();
+      if (keys[key]) {
+        keys[key].used += amount;
+        await storage.save(keys);
+      }
+    });
+    // Master quota local
+    const mq = await getMasterQuota();
+    mq.used += amount;
+    await setMasterQuota(mq);
+  }
+}
+
+async function refundQuota(key, amount) {
+  if (amount <= 0) return;
+  if (USE_REDIS && storage.redis) {
+    await storage.redis.hincrby('key_usage', key, -amount);
+    await storage.redis.incrby('master_quota_used', -amount);
+    console.log(`✅ Atomic Refund: ${amount} to ${key}`);
+  } else {
+    await keysMutex.runExclusive(async () => {
+      const keys = await storage.load();
+      if (keys[key]) {
+        keys[key].used = Math.max(0, keys[key].used - amount);
+        await storage.save(keys);
+      }
+    });
+    const mq = await getMasterQuota();
+    mq.used = Math.max(0, mq.used - amount);
+    await setMasterQuota(mq);
+  }
+}
 
 // Middleware
 app.use(helmet({
@@ -353,7 +401,19 @@ app.delete('/admin/delete-key', async (req, res) => {
 app.get('/admin/keys', async (req, res) => {
   const { secret } = req.query;
   if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
   const keys = await storage.load();
+
+  // Update used counts with atomic values from Redis
+  if (USE_REDIS && storage.redis) {
+    const usages = await storage.redis.hgetall('key_usage') || {};
+    for (const key in keys) {
+      if (usages[key]) {
+        keys[key].used = parseInt(usages[key]);
+      }
+    }
+  }
+
   res.json({ keys });
 });
 
@@ -391,10 +451,12 @@ app.get('/api/user/quota', async (req, res) => {
     return res.status(404).json({ error: 'Key not found' });
   }
 
+  const used = await getUsedCount(key);
+
   res.json({
     quota: keyData.quota,
-    used: keyData.used,
-    remaining: keyData.quota - keyData.used,
+    used: used,
+    remaining: keyData.quota - used,
     active: keyData.active
   });
 });
@@ -405,6 +467,11 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
 
   if (!hCaptchaToken || !verificationIds || !Array.isArray(verificationIds)) {
     return res.status(400).json({ error: 'Invalid request body' });
+  }
+
+  // Security: Limit array size to prevent OOM/DoS
+  if (verificationIds.length > 100) {
+    return res.status(400).json({ error: 'Maximum 100 IDs per request allowed.' });
   }
 
   // Auto-extract IDs from URLs
@@ -424,15 +491,15 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
   });
 
   // 1. Validate Local Key
-  // Note: We load keys just to check, separate from quota deduction to be fast
-  let keys = await storage.load();
-  let keyData = keys[hCaptchaToken];
+  const keys = await storage.load();
+  const keyData = keys[hCaptchaToken];
 
   if (!keyData || !keyData.active) {
     return res.status(403).json({ error: 'Invalid or inactive API Key' });
   }
 
-  if (keyData.used + verificationIds.length > keyData.quota) {
+  const currentUsed = await getUsedCount(hCaptchaToken);
+  if (currentUsed + verificationIds.length > keyData.quota) {
     return res.status(402).json({ error: 'Quota exceeded for this API Key' });
   }
 
@@ -446,20 +513,8 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     });
   }
 
-  // 2. Reserve Quota Immediately (Deduct upfront)
-  await keysMutex.runExclusive(async () => {
-    const freshKeys = await storage.load();
-    if (freshKeys[hCaptchaToken]) {
-      freshKeys[hCaptchaToken].used += verificationIds.length;
-      await storage.save(freshKeys);
-      console.log(`✅ Reserved ${verificationIds.length} quota for key ${hCaptchaToken}`);
-    }
-  });
-
-  // 2b. Also deduct from Master Key quota (reuse masterQuota from check above)
-  masterQuota.used += verificationIds.length;
-  await setMasterQuota(masterQuota);
-  console.log(`✅ Master Key: used ${masterQuota.used}/${masterQuota.total}`);
+  // 2. Reserve Quota Immediately
+  await deductQuota(hCaptchaToken, verificationIds.length);
 
   // 3. Prepare Proxy Request
   res.setHeader('Content-Type', 'text/event-stream');
@@ -531,16 +586,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     });
 
     response.data.on('end', async () => {
-      if (failedCount > 0) {
-        await keysMutex.runExclusive(async () => {
-          const freshKeys = await storage.load();
-          if (freshKeys[hCaptchaToken]) {
-            freshKeys[hCaptchaToken].used = Math.max(0, freshKeys[hCaptchaToken].used - failedCount);
-            await storage.save(freshKeys);
-            console.log(`Refunded ${failedCount} credits to key ${hCaptchaToken}`);
-          }
-        });
-      }
+      await refundQuota(hCaptchaToken, failedCount);
       res.end();
     });
 
