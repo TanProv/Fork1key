@@ -394,3 +394,120 @@ textarea::placeholder {
 .user-select-none {
     user-select: none;
 }
+
+/* Pricing Table */
+.pricing-section {
+    margin: 50px 0;
+}
+
+.pricing-title {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.pricing-title h2 {
+    font-size: 2.2rem;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+@media (max-width: 900px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pricing-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    transition: all 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-yellow);
+}
+
+.pricing-card.featured {
+    border: 2px solid var(--accent-yellow);
+}
+
+.price-tag {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 1rem 0;
+}
+
+.price-tag .vnd {
+    display: block;
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    text-align: left;
+    flex: 1;
+}
+
+.pricing-features li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.contact-section {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-top: 4rem;
+}
+
+.contact-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 700;
+    transition: all 0.3s;
+}
+
+.btn-telegram {
+    background: #0088cc;
+}
+
+.btn-discord {
+    background: #5865f2;
+}
