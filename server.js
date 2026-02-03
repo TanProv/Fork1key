@@ -234,6 +234,24 @@ if (USE_REDIS) {
   };
 }
 
+// Immediately load per-key quotas from Redis (for Vercel serverless cold starts)
+(async () => {
+  if (USE_REDIS && storage && storage.redis) {
+    try {
+      for (const keyObj of masterKeyPool) {
+        const keyId = keyObj.key.substring(0, 8);
+        const quota = await storage.redis.hget('master_key_quotas', keyId);
+        const used = await storage.redis.hget('master_key_used', keyId);
+        if (quota !== null) keyObj.quota = parseInt(quota);
+        if (used !== null) keyObj.used = parseInt(used);
+      }
+      console.log('📊 Per-key quotas loaded from Redis');
+    } catch (e) {
+      console.error('⚠️ Failed to load per-key quotas:', e.message);
+    }
+  }
+})();
+
 // Master Key Quota Helpers
 async function getMasterQuota() {
   if (USE_REDIS && storage.redis) {
