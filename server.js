@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 const KEYS_FILE = path.join(__dirname, 'keys.json');
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'admin123';
 
-// Multi-Key Pool System
+// Multi-Key Pool System with Per-Key Quota Tracking
 // Supports: MASTER_KEYS=key1,key2,key3 OR individual MASTER_KEY, MASTER_KEY_2, etc.
 function loadMasterKeys() {
   const keys = [];
@@ -26,17 +26,23 @@ function loadMasterKeys() {
   if (process.env.MASTER_KEYS) {
     process.env.MASTER_KEYS.split(',').forEach(k => {
       const trimmed = k.trim();
-      if (trimmed) keys.push({ key: trimmed, enabled: true, errorCount: 0 });
+      if (trimmed) keys.push({
+        key: trimmed,
+        enabled: true,
+        errorCount: 0,
+        quota: 0,  // Will be loaded from Redis
+        used: 0    // Will be loaded from Redis
+      });
     });
   }
 
   // Method 2: Individual keys (MASTER_KEY, MASTER_KEY_2, MASTER_KEY_3, etc.)
   if (process.env.MASTER_KEY) {
-    keys.push({ key: process.env.MASTER_KEY, enabled: true, errorCount: 0 });
+    keys.push({ key: process.env.MASTER_KEY, enabled: true, errorCount: 0, quota: 0, used: 0 });
   }
   for (let i = 2; i <= 10; i++) {
     const envKey = process.env[`MASTER_KEY_${i}`];
-    if (envKey) keys.push({ key: envKey, enabled: true, errorCount: 0 });
+    if (envKey) keys.push({ key: envKey, enabled: true, errorCount: 0, quota: 0, used: 0 });
   }
 
   return keys;
@@ -45,7 +51,42 @@ function loadMasterKeys() {
 let masterKeyPool = loadMasterKeys();
 let currentKeyIndex = 0;
 
-// Get next available key (round-robin with skip on disabled)
+// Get short key ID for Redis storage (first 8 chars)
+function getKeyId(keyObj) {
+  return keyObj.key.substring(0, 8);
+}
+
+// Load per-key quotas from Redis
+async function loadMasterKeyQuotas() {
+  if (!USE_REDIS || !storage.redis) return;
+
+  for (const keyObj of masterKeyPool) {
+    const keyId = getKeyId(keyObj);
+    const quota = await storage.redis.hget('master_key_quotas', keyId) || 0;
+    const used = await storage.redis.hget('master_key_used', keyId) || 0;
+    keyObj.quota = parseInt(quota);
+    keyObj.used = parseInt(used);
+  }
+  console.log('📊 Loaded per-key quotas from Redis');
+}
+
+// Save per-key quota to Redis
+async function saveMasterKeyQuota(keyObj) {
+  if (!USE_REDIS || !storage.redis) return;
+  const keyId = getKeyId(keyObj);
+  await storage.redis.hset('master_key_quotas', keyId, keyObj.quota);
+}
+
+// Increment used count for a key (atomic)
+async function incrementMasterKeyUsed(keyObj, amount) {
+  keyObj.used += amount;
+  if (USE_REDIS && storage.redis) {
+    const keyId = getKeyId(keyObj);
+    await storage.redis.hincrby('master_key_used', keyId, amount);
+  }
+}
+
+// Get next available key (round-robin, skip disabled AND exhausted keys)
 function getNextMasterKey() {
   if (masterKeyPool.length === 0) return null;
 
@@ -54,12 +95,13 @@ function getNextMasterKey() {
     const keyObj = masterKeyPool[currentKeyIndex];
     currentKeyIndex = (currentKeyIndex + 1) % masterKeyPool.length;
 
-    if (keyObj.enabled) {
+    // Skip if disabled or quota exhausted (quota=0 means unlimited)
+    if (keyObj.enabled && (keyObj.quota === 0 || keyObj.used < keyObj.quota)) {
       return keyObj;
     }
   } while (currentKeyIndex !== startIndex);
 
-  // All keys disabled, try first one anyway
+  // All keys disabled or exhausted, return first one anyway
   return masterKeyPool[0];
 }
 
@@ -568,12 +610,15 @@ app.get('/admin/master-keys', (req, res) => {
     id: index,
     keyPreview: k.key.substring(0, 8) + '...' + k.key.slice(-4),
     enabled: k.enabled,
-    errorCount: k.errorCount
+    errorCount: k.errorCount,
+    quota: k.quota,
+    used: k.used,
+    remaining: k.quota > 0 ? Math.max(0, k.quota - k.used) : null
   }));
 
   res.json({
     total: masterKeyPool.length,
-    active: masterKeyPool.filter(k => k.enabled).length,
+    active: masterKeyPool.filter(k => k.enabled && (k.quota === 0 || k.used < k.quota)).length,
     keys: safeList
   });
 });
@@ -634,6 +679,38 @@ app.delete('/admin/master-keys/remove', (req, res) => {
     success: true,
     message: 'Key removed from pool',
     total: masterKeyPool.length
+  });
+});
+
+// Admin: Set Master Key Quota
+app.post('/admin/master-keys/set-quota', async (req, res) => {
+  const { secret, keyIndex, quota, resetUsed } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  if (keyIndex < 0 || keyIndex >= masterKeyPool.length) {
+    return res.status(404).json({ error: 'Key not found' });
+  }
+
+  const keyObj = masterKeyPool[keyIndex];
+
+  if (quota !== undefined) {
+    keyObj.quota = parseInt(quota) || 0;
+    await saveMasterKeyQuota(keyObj);
+  }
+
+  if (resetUsed) {
+    keyObj.used = 0;
+    if (USE_REDIS && storage.redis) {
+      const keyId = getKeyId(keyObj);
+      await storage.redis.hset('master_key_used', keyId, 0);
+    }
+  }
+
+  res.json({
+    success: true,
+    keyIndex: keyIndex,
+    quota: keyObj.quota,
+    used: keyObj.used
   });
 });
 
@@ -762,6 +839,9 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       console.log(`⚠️ Master Key error (${response.status}): ${masterKeyObj.key.substring(0, 8)}...`);
     } else if (response.status === 200) {
       markKeySuccess(masterKeyObj);
+      // Track per-key usage
+      await incrementMasterKeyUsed(masterKeyObj, verificationIds.length);
+      console.log(`📊 Master Key ${masterKeyObj.key.substring(0, 8)}... used: ${masterKeyObj.used}/${masterKeyObj.quota || '∞'}`);
     }
 
     if (response.status === 400) {
@@ -894,10 +974,13 @@ app.get('/api/stats/recent', async (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`🚀 Proxy Server running on http://localhost:${PORT}`);
-    console.log(`🔑 Master Key Configured: ${MASTER_KEY ? 'YES' : 'NO'}`);
-    if (!MASTER_KEY) console.warn('⚠️ WARNING: MASTER_KEY is not set in .env! Proxy will fail.');
+    console.log(`🔑 Master Key Pool: ${masterKeyPool.length} key(s) configured`);
+    if (masterKeyPool.length === 0) console.warn('⚠️ WARNING: No Master Keys configured! Proxy will fail.');
+
+    // Load per-key quotas from Redis
+    await loadMasterKeyQuotas();
   });
 }
 

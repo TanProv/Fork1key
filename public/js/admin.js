@@ -386,14 +386,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        container.innerHTML = keys.map(k => `
+        container.innerHTML = keys.map(k => {
+            const quotaDisplay = k.quota > 0
+                ? `<span style="font-size: 12px; color: ${k.remaining > 0 ? '#22c55e' : '#ef4444'};">${k.used}/${k.quota} (còn ${k.remaining})</span>`
+                : `<span style="font-size: 12px; color: #3b82f6;">${k.used}/∞</span>`;
+
+            return `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--bg-dark); border-radius: 8px; border: 1px solid var(--card-border);">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="width: 10px; height: 10px; border-radius: 50%; background: ${k.enabled ? '#22c55e' : '#ef4444'};"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: ${k.enabled && (k.quota === 0 || k.remaining > 0) ? '#22c55e' : '#ef4444'};"></span>
                     <code style="font-family: monospace; color: var(--text-primary);">${k.keyPreview}</code>
+                    ${quotaDisplay}
                     ${k.errorCount > 0 ? `<span style="font-size: 11px; color: #f59e0b; background: rgba(245,158,11,0.1); padding: 2px 6px; border-radius: 4px;">${k.errorCount} lỗi</span>` : ''}
                 </div>
                 <div style="display: flex; gap: 8px;">
+                    <button onclick="editMasterKeyQuota(${k.id}, ${k.quota})" class="btn-icon-text" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--card-border);">
+                        <i class="fas fa-edit"></i> Quota
+                    </button>
                     <button onclick="toggleMasterKey(${k.id})" class="btn-icon-text" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--card-border);">
                         <i class="fas ${k.enabled ? 'fa-pause' : 'fa-play'}"></i> ${k.enabled ? 'Tắt' : 'Bật'}
                     </button>
@@ -402,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     // Add Master Key
@@ -463,6 +472,45 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 alert('✅ Đã xóa Master Key khỏi Pool!');
                 loadMasterKeyPool();
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    };
+
+    // Edit Master Key Quota
+    window.editMasterKeyQuota = async (keyIndex, currentQuota) => {
+        const newQuota = prompt(
+            `Thiết lập quota cho Master Key này:\n` +
+            `• Nhập số (VD: 1000) để giới hạn\n` +
+            `• Nhập 0 để không giới hạn (∞)\n\n` +
+            `Quota hiện tại: ${currentQuota || '∞ (không giới hạn)'}`,
+            currentQuota || 0
+        );
+
+        if (newQuota === null) return; // Cancelled
+
+        const resetUsed = confirm('Có muốn reset số đã dùng về 0 không?');
+
+        try {
+            const res = await fetch('/admin/master-keys/set-quota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    secret: adminSecret,
+                    keyIndex,
+                    quota: parseInt(newQuota) || 0,
+                    resetUsed: resetUsed
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(`✅ Đã cập nhật quota: ${data.quota || '∞'} (đã dùng: ${data.used})`);
+                loadMasterKeyPool();
+            } else {
+                const err = await res.json();
+                alert('❌ Lỗi: ' + (err.error || 'Không thể cập nhật'));
             }
         } catch (e) {
             alert('❌ Lỗi: ' + e.message);
