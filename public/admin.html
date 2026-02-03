@@ -269,6 +269,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Master Key Pool Section -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <div class="header-left">
+                    <i class="fas fa-key" style="color: #f59e0b;"></i>
+                    <h3>Master Key Pool</h3>
+                </div>
+                <div class="header-right" style="display: flex; gap: 10px;">
+                    <span id="masterKeyCount" style="color: var(--text-secondary); font-size: 13px;"></span>
+                    <button class="btn-icon-text" id="addMasterKeyBtn"
+                        style="background: linear-gradient(135deg, #22c55e, #16a34a); border: none; padding: 6px 12px;">
+                        <i class="fas fa-plus"></i> Thêm Key
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                    <i class="fas fa-info-circle"></i> Hệ thống xoay vòng giữa các Master Key. Key bị lỗi 3 lần liên
+                    tiếp sẽ tự động tắt.
+                </p>
+                <div id="masterKeysList" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/admin.js"></script>

@@ -356,4 +356,123 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         originalLoadKeys(filtered);
     });
+
+    // ============ Master Key Pool Management ============
+
+    async function loadMasterKeyPool() {
+        try {
+            const res = await fetch(`/admin/master-keys?secret=${adminSecret}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('masterKeyCount').textContent = `${data.active}/${data.total} active`;
+                renderMasterKeys(data.keys);
+            }
+        } catch (e) {
+            console.error('Master Key Pool load error:', e);
+        }
+    }
+
+    function renderMasterKeys(keys) {
+        const container = document.getElementById('masterKeysList');
+        if (!container) return;
+
+        if (keys.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>Chưa có Master Key nào. Hãy thêm key từ Vercel Environment hoặc nút "Thêm Key".</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = keys.map(k => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--bg-dark); border-radius: 8px; border: 1px solid var(--card-border);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: ${k.enabled ? '#22c55e' : '#ef4444'};"></span>
+                    <code style="font-family: monospace; color: var(--text-primary);">${k.keyPreview}</code>
+                    ${k.errorCount > 0 ? `<span style="font-size: 11px; color: #f59e0b; background: rgba(245,158,11,0.1); padding: 2px 6px; border-radius: 4px;">${k.errorCount} lỗi</span>` : ''}
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="toggleMasterKey(${k.id})" class="btn-icon-text" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--card-border);">
+                        <i class="fas ${k.enabled ? 'fa-pause' : 'fa-play'}"></i> ${k.enabled ? 'Tắt' : 'Bật'}
+                    </button>
+                    <button onclick="removeMasterKey(${k.id})" class="btn-icon-text" style="padding: 4px 10px; font-size: 12px; color: #ef4444; border: 1px solid #ef444433;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Add Master Key
+    document.getElementById('addMasterKeyBtn')?.addEventListener('click', async () => {
+        const newKey = prompt('Nhập Master Key mới (lấy từ web gốc sau khi mua):');
+        if (!newKey || newKey.trim().length < 10) {
+            alert('Key không hợp lệ!');
+            return;
+        }
+
+        try {
+            const res = await fetch('/admin/master-keys/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: adminSecret, key: newKey.trim() })
+            });
+
+            if (res.ok) {
+                alert('✅ Đã thêm Master Key thành công!');
+                loadMasterKeyPool();
+            } else {
+                const err = await res.json();
+                alert('❌ Lỗi: ' + (err.error || 'Không thể thêm key'));
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    });
+
+    // Toggle Master Key
+    window.toggleMasterKey = async (keyIndex) => {
+        try {
+            const res = await fetch('/admin/master-keys/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: adminSecret, keyIndex })
+            });
+
+            if (res.ok) {
+                loadMasterKeyPool();
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    };
+
+    // Remove Master Key
+    window.removeMasterKey = async (keyIndex) => {
+        if (!confirm('⚠️ Bạn có chắc muốn xóa Master Key này khỏi Pool?\n(Key chỉ bị xóa khỏi bộ nhớ, không ảnh hưởng Vercel Environment)')) return;
+
+        try {
+            const res = await fetch('/admin/master-keys/remove', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: adminSecret, keyIndex })
+            });
+
+            if (res.ok) {
+                alert('✅ Đã xóa Master Key khỏi Pool!');
+                loadMasterKeyPool();
+            }
+        } catch (e) {
+            alert('❌ Lỗi: ' + e.message);
+        }
+    };
+
+    // Load Master Key Pool on page load (after successful login)
+    const originalVerifyAndLoad = verifyAndLoad;
+    verifyAndLoad = async function (secret) {
+        await originalVerifyAndLoad(secret);
+        loadMasterKeyPool();
+    };
 });

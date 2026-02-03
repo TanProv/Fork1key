@@ -15,8 +15,71 @@ const keysMutex = new Mutex(); // Global lock for keys operations
 const app = express();
 const PORT = process.env.PORT || 3000;
 const KEYS_FILE = path.join(__dirname, 'keys.json');
-const MASTER_KEY = process.env.MASTER_KEY;
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'admin123';
+
+// Multi-Key Pool System
+// Supports: MASTER_KEYS=key1,key2,key3 OR individual MASTER_KEY, MASTER_KEY_2, etc.
+function loadMasterKeys() {
+  const keys = [];
+
+  // Method 1: Comma-separated list
+  if (process.env.MASTER_KEYS) {
+    process.env.MASTER_KEYS.split(',').forEach(k => {
+      const trimmed = k.trim();
+      if (trimmed) keys.push({ key: trimmed, enabled: true, errorCount: 0 });
+    });
+  }
+
+  // Method 2: Individual keys (MASTER_KEY, MASTER_KEY_2, MASTER_KEY_3, etc.)
+  if (process.env.MASTER_KEY) {
+    keys.push({ key: process.env.MASTER_KEY, enabled: true, errorCount: 0 });
+  }
+  for (let i = 2; i <= 10; i++) {
+    const envKey = process.env[`MASTER_KEY_${i}`];
+    if (envKey) keys.push({ key: envKey, enabled: true, errorCount: 0 });
+  }
+
+  return keys;
+}
+
+let masterKeyPool = loadMasterKeys();
+let currentKeyIndex = 0;
+
+// Get next available key (round-robin with skip on disabled)
+function getNextMasterKey() {
+  if (masterKeyPool.length === 0) return null;
+
+  const startIndex = currentKeyIndex;
+  do {
+    const keyObj = masterKeyPool[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % masterKeyPool.length;
+
+    if (keyObj.enabled) {
+      return keyObj;
+    }
+  } while (currentKeyIndex !== startIndex);
+
+  // All keys disabled, try first one anyway
+  return masterKeyPool[0];
+}
+
+// Mark key as failed (disable after 3 consecutive errors)
+function markKeyFailed(keyObj) {
+  keyObj.errorCount++;
+  if (keyObj.errorCount >= 3) {
+    keyObj.enabled = false;
+    console.log(`⚠️ Master Key disabled after 3 errors: ${keyObj.key.substring(0, 8)}...`);
+  }
+}
+
+// Mark key as successful (reset error count)
+function markKeySuccess(keyObj) {
+  keyObj.errorCount = 0;
+  keyObj.enabled = true;
+}
+
+console.log(`🔑 Loaded ${masterKeyPool.length} Master Key(s)`);
+
 
 // Upstream CSRF Cache
 let upstreamCsrfCache = {
@@ -496,6 +559,85 @@ app.post('/admin/master-quota', async (req, res) => {
   res.json({ success: true, quota: final });
 });
 
+// Admin: List Master Key Pool
+app.get('/admin/master-keys', (req, res) => {
+  const { secret } = req.query;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  const safeList = masterKeyPool.map((k, index) => ({
+    id: index,
+    keyPreview: k.key.substring(0, 8) + '...' + k.key.slice(-4),
+    enabled: k.enabled,
+    errorCount: k.errorCount
+  }));
+
+  res.json({
+    total: masterKeyPool.length,
+    active: masterKeyPool.filter(k => k.enabled).length,
+    keys: safeList
+  });
+});
+
+// Admin: Add Master Key to Pool (Runtime)
+app.post('/admin/master-keys/add', (req, res) => {
+  const { secret, key } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+  if (!key || key.length < 10) return res.status(400).json({ error: 'Invalid key' });
+
+  // Check duplicate
+  if (masterKeyPool.some(k => k.key === key)) {
+    return res.status(409).json({ error: 'Key already exists in pool' });
+  }
+
+  masterKeyPool.push({ key: key, enabled: true, errorCount: 0 });
+  console.log(`✅ New Master Key added to pool: ${key.substring(0, 8)}...`);
+
+  res.json({
+    success: true,
+    message: 'Key added to pool',
+    total: masterKeyPool.length
+  });
+});
+
+// Admin: Toggle Master Key (Enable/Disable)
+app.post('/admin/master-keys/toggle', (req, res) => {
+  const { secret, keyIndex } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  if (keyIndex < 0 || keyIndex >= masterKeyPool.length) {
+    return res.status(404).json({ error: 'Key not found' });
+  }
+
+  masterKeyPool[keyIndex].enabled = !masterKeyPool[keyIndex].enabled;
+  masterKeyPool[keyIndex].errorCount = 0; // Reset error count
+
+  res.json({
+    success: true,
+    keyIndex: keyIndex,
+    enabled: masterKeyPool[keyIndex].enabled
+  });
+});
+
+// Admin: Remove Master Key from Pool
+app.delete('/admin/master-keys/remove', (req, res) => {
+  const { secret, keyIndex } = req.body;
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+
+  if (keyIndex < 0 || keyIndex >= masterKeyPool.length) {
+    return res.status(404).json({ error: 'Key not found' });
+  }
+
+  const removed = masterKeyPool.splice(keyIndex, 1);
+  console.log(`🗑️ Master Key removed from pool: ${removed[0].key.substring(0, 8)}...`);
+
+  res.json({
+    success: true,
+    message: 'Key removed from pool',
+    total: masterKeyPool.length
+  });
+});
+
+
 // User: Get Quota (for realtime display)
 app.get('/api/user/quota', async (req, res) => {
   const { key } = req.query;
@@ -579,8 +721,14 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
+    // Get next available Master Key from pool
+    const masterKeyObj = getNextMasterKey();
+    if (!masterKeyObj) {
+      return res.status(503).json({ error: 'No Master Keys configured. Please contact Admin.' });
+    }
+
     console.log(`Forwarding request for key ${hCaptchaToken} to upstream...`);
-    console.log(`Using MASTER_KEY: ${MASTER_KEY ? 'SET' : 'NOT SET'}`);
+    console.log(`Using Master Key: ${masterKeyObj.key.substring(0, 8)}... (Pool: ${masterKeyPool.length} keys)`);
 
     // Fetch dynamic CSRF config
     const upstreamConfig = await getUpstreamConfig();
@@ -589,7 +737,7 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
       method: 'post',
       url: 'https://neigui.1key.me/api/batch',
       data: {
-        hCaptchaToken: MASTER_KEY || 'no-master-key-set',
+        hCaptchaToken: masterKeyObj.key,
         verificationIds: verificationIds,
         useLucky: false,
         programId: ""
@@ -607,6 +755,14 @@ app.post('/api/batch', validateCsrf, async (req, res) => {
     });
 
     console.log(`Upstream responded with status: ${response.status}`);
+
+    // Handle key errors (402 = quota exceeded, 403 = invalid key)
+    if (response.status === 402 || response.status === 403) {
+      markKeyFailed(masterKeyObj);
+      console.log(`⚠️ Master Key error (${response.status}): ${masterKeyObj.key.substring(0, 8)}...`);
+    } else if (response.status === 200) {
+      markKeySuccess(masterKeyObj);
+    }
 
     if (response.status === 400) {
       let errorData = '';
