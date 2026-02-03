@@ -302,6 +302,49 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Upstream Health Check (Cached)
+let upstreamHealthCache = { status: 'unknown', ping: 0, lastCheck: 0 };
+
+app.get('/api/upstream-status', async (req, res) => {
+  const now = Date.now();
+  const CACHE_TTL = 30 * 1000; // 30 seconds
+
+  // Return cached result if still valid
+  if (upstreamHealthCache.lastCheck > 0 && (now - upstreamHealthCache.lastCheck) < CACHE_TTL) {
+    return res.json(upstreamHealthCache);
+  }
+
+  // Perform health check
+  const startTime = Date.now();
+  try {
+    const response = await axios.get('https://neigui.1key.me/', {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    const ping = Date.now() - startTime;
+    const hasToken = response.data && response.data.includes('CSRF_TOKEN');
+
+    upstreamHealthCache = {
+      status: response.status === 200 && hasToken ? 'online' : 'degraded',
+      ping: ping,
+      lastCheck: now,
+      httpStatus: response.status
+    };
+  } catch (error) {
+    upstreamHealthCache = {
+      status: 'offline',
+      ping: Date.now() - startTime,
+      lastCheck: now,
+      error: error.code || error.message
+    };
+  }
+
+  res.json(upstreamHealthCache);
+});
+
 // Helper: Generate Complex Random String
 const generateComplexKey = (length = 32) => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789^.@-';

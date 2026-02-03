@@ -372,5 +372,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Upstream Status Check
+    async function checkUpstreamStatus() {
+        try {
+            const res = await fetch('/api/upstream-status');
+            if (res.ok) {
+                const data = await res.json();
+                const dot = document.getElementById('upstreamStatusDot');
+                const text = document.getElementById('upstreamStatusText');
+                const ping = document.getElementById('upstreamPing');
+
+                if (data.status === 'online') {
+                    dot.style.background = '#22c55e';
+                    text.textContent = 'Online';
+                    text.style.color = '#22c55e';
+                } else if (data.status === 'degraded') {
+                    dot.style.background = '#f59e0b';
+                    text.textContent = 'Chậm';
+                    text.style.color = '#f59e0b';
+                } else {
+                    dot.style.background = '#ef4444';
+                    text.textContent = 'Offline';
+                    text.style.color = '#ef4444';
+                }
+
+                if (data.ping) {
+                    ping.textContent = `(${data.ping}ms)`;
+                }
+            }
+        } catch (e) {
+            console.error('Upstream check error:', e);
+        }
+    }
+
+    // Initial check and auto-refresh
+    checkUpstreamStatus();
+    setInterval(checkUpstreamStatus, 60000); // Check every 60 seconds
+
     console.log('Batch Verifier UI Ready');
 });
