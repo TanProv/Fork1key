@@ -958,42 +958,48 @@ async function updateStats(isSuccess) {
 // Stats: Endpoint
 app.get('/api/stats/recent', async (req, res) => {
   const now = Date.now();
-  const oneDayAgo = now - 24 * 60 * 60 * 1000; // Look back up to 24h to find last 100
-  let success = 0;
-  let fail = 0;
+  const tenMinsAgo = now - 10 * 60 * 1000;
+  const fallbackWindow = now - 24 * 60 * 60 * 1000; // Look back up to 24h for fallback
+
   let events_list = [];
 
   if (USE_REDIS && storage.redis) {
     try {
-      const events = await storage.redis.zrange('stats_events', oneDayAgo, now, { byScore: true });
+      // Get a broad window to ensure we have enough for fallback
+      const events = await storage.redis.zrange('stats_events', fallbackWindow, now, { byScore: true });
       events.forEach(member => {
         if (typeof member === 'string') {
           const parts = member.split(':');
+          const ts = parseInt(parts[0]);
           const isSuccess = parts[1] === '1';
-          events_list.push(isSuccess ? 1 : 0);
+          events_list.push({ success: isSuccess, ts });
         }
       });
     } catch (e) {
       console.error('Redis Stats Error:', e);
     }
-  } else {
-    if (global.localStats) {
-      global.localStats.forEach(s => {
-        if (s.ts > oneDayAgo) {
-          events_list.push(s.success ? 1 : 0);
-        }
-      });
-    }
+  } else if (global.localStats) {
+    events_list = global.localStats.filter(s => s.ts > fallbackWindow).map(s => ({ success: s.success, ts: s.ts }));
   }
 
-  // Get last 100
-  const recent_events = events_list.slice(-100);
-  recent_events.forEach(status => {
-    if (status === 1) success++;
+  // Filter for last 10 minutes
+  let results = events_list.filter(e => e.ts > tenMinsAgo);
+
+  // Fallback: If less than 10 events in 10 mins, take last 10 overall
+  if (results.length < 10) {
+    results = events_list.slice(-10);
+  }
+
+  // Final count and map to status scores
+  let success = 0;
+  let fail = 0;
+  const final_events = results.map(e => {
+    if (e.success) success++;
     else fail++;
+    return e.success ? 1 : 0;
   });
 
-  res.json({ success, fail, events: recent_events });
+  res.json({ success, fail, events: final_events });
 });
 
 if (process.env.NODE_ENV !== 'test') {
