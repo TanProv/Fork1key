@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build-js": "javascript-obfuscator src-js/main.js --output public/js/main.js --compact true --self-defending true --disable-console-output true --debug-protection true --debug-protection-interval 2000 --split-strings true --string-array true --string-array-encoding 'base64' --string-array-threshold 1"
   },
   "keywords": [
     "verification",
