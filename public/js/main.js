@@ -78,18 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
             faq_3_a: 'Vui lòng liên hệ Admin để nhận mã API Key hợp lệ cho việc sử dụng công cụ xác minh này.',
             m_title: 'Hệ thống đang bảo trì',
             m_desc: 'API SheerID hiện đang tạm ngưng để cập nhật hoặc bảo trì định kỳ. Hệ thống sẽ tự động mở lại khi dịch vụ sẵn sàng.',
-            m_status: 'Đang chờ kết nối API...',
-            m_contact: 'Nếu cần hỗ trợ gấp, vui lòng liên hệ',
-            placeholder: `Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
-US IP + Fingerprint browser.
-Đăng nhập trực tiếp không cần xác minh!!!
-Khuyên dùng: Dùng IP Mỹ gốc và ít người dùng. Tránh dùng IP 'Data Center' bị nát.
-
-I'm feeling lucky -> Sử dụng một trong các trường đã hoạt động tốt trong 2 ngày qua.
-KHÔNG CẦN ĐĂNG NHẬP! HOÀN TOÀN MIỄN PHÍ!
-Trang web này sẽ duy trì lâu nhất có thể.
-Nếu token hết hạn hoặc đã xử lý -> Hãy thử lấy lại link ? mới.
-Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).`
+            pending: 'Đang chờ...',
+            reserved: 'Đang giữ:',
+            used: 'Đã dùng:',
+            mode: 'Chế độ:',
+            history_title: 'Lịch Sử Xác Minh',
+            btn_refresh: 'Làm mới',
+            history_empty: 'Chưa có lịch sử hoặc chưa nhập API Key',
+            placeholder: `...`
         },
         en: {
             theme_light: 'Light Mode',
@@ -135,18 +131,14 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
             faq_3_a: 'Please contact Admin to receive a valid API Key for using this verification tool.',
             m_title: 'System Maintenance',
             m_desc: 'The SheerID API is currently suspended for updates or regular maintenance. The system will unlock once the service is ready.',
-            m_status: 'Waiting for API connection...',
-            m_contact: 'For urgent support, please contact',
-            placeholder: `Enter Verification IDs or URLs below, one per line...
-US IP + Fingerprint browser.
-Direct login without verification!!!
-Recommended: Use residential US IP. Avoid exhausted Data Center IPs.
-            
-I'm feeling lucky -> Use one of the fields that worked well in the past 2 days.
-LOGIN NOT REQUIRED! COMPLETELY FREE!
-This site will stay active as long as possible.
-If token expired or processed -> Try getting a new link ?.
-This tool is for Goo Student Discount Verification IDs only (US IP).`
+            pending: 'Pending...',
+            reserved: 'Reserved:',
+            used: 'Used:',
+            mode: 'Mode:',
+            history_title: 'Verification History',
+            btn_refresh: 'Refresh',
+            history_empty: 'No history or API Key not set',
+            placeholder: `...`
         }
     };
 
@@ -225,49 +217,95 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
             return;
         }
 
-        const isV2 = apiKey.startsWith('uak_');
-
         try {
-            if (isV2) {
-                const res = await fetch(`${V2_BASE}/key/info`, {
-                    headers: { 'X-API-Key': apiKey }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('quotaRemaining').textContent = data.available_credits.toLocaleString();
-                    document.getElementById('quotaTotal').textContent = data.total_credits.toLocaleString();
-                    document.getElementById('quotaDisplay').style.display = 'flex';
+            const res = await fetch(`${V2_BASE}/key/info`, {
+                headers: { 'X-API-Key': apiKey }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                currentKeyInfo = data; // Store for verification logic
 
-                    document.getElementById('keyInfoExtra').style.display = 'block';
-                    document.getElementById('keyNameDisplay').textContent = data.key_name;
-                    document.getElementById('keyTypeDisplay').textContent = data.key_type === 'multi_use' ? 'Multi-use' : 'Single-use';
+                document.getElementById('quotaRemaining').textContent = data.available_credits.toLocaleString();
+                document.getElementById('quotaReserved').textContent = data.reserved_credits.toLocaleString();
+                document.getElementById('quotaUsed').textContent = data.used_credits.toLocaleString();
 
-                    const remaining = data.available_credits;
-                    const quotaElem = document.getElementById('quotaRemaining');
-                    quotaElem.style.color = remaining < 1 ? '#ef4444' : (remaining < 5 ? '#f59e0b' : '#22c55e');
-                } else {
-                    document.getElementById('quotaDisplay').style.display = 'none';
+                const modeText = data.multi_processing ? `Multi (${data.max_concurrent})` : `Seq (${data.cooldown_seconds}s)`;
+                document.getElementById('pmodeDisplay').textContent = modeText;
+
+                document.getElementById('keyNameDisplay').textContent = data.key_name;
+                const typeBadge = document.getElementById('keyTypeBadge');
+                if (typeBadge) {
+                    typeBadge.textContent = data.key_type.replace('_', '-');
+                    typeBadge.style.background = data.key_type === 'multi_use' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(168, 85, 247, 0.1)';
+                    typeBadge.style.color = data.key_type === 'multi_use' ? '#3b82f6' : '#a855f7';
                 }
+
+                document.getElementById('quotaDisplay').style.display = 'flex';
+
+                const remaining = data.available_credits;
+                const quotaElem = document.getElementById('quotaRemaining');
+                quotaElem.style.color = remaining < 1 ? '#ef4444' : (remaining < 5 ? '#f59e0b' : '#22c55e');
+
+                // If info ok, also fetch history
+                fetchHistory();
             } else {
-                // Legacy Quota
-                const res = await fetch(`/api/user/quota?key=${encodeURIComponent(apiKey)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('quotaRemaining').textContent = data.remaining.toLocaleString();
-                    document.getElementById('quotaTotal').textContent = data.quota.toLocaleString();
-                    document.getElementById('quotaDisplay').style.display = 'flex';
-                    document.getElementById('keyInfoExtra').style.display = 'none';
-
-                    const remaining = data.remaining;
-                    const quotaElem = document.getElementById('quotaRemaining');
-                    quotaElem.style.color = remaining < 10 ? '#ef4444' : (remaining < 100 ? '#f59e0b' : '#22c55e');
-                } else {
-                    document.getElementById('quotaDisplay').style.display = 'none';
-                }
+                document.getElementById('quotaDisplay').style.display = 'none';
+                currentKeyInfo = null;
             }
         } catch (e) {
             console.error('Quota fetch error:', e);
         }
+    }
+
+    let currentKeyInfo = null;
+
+    async function fetchHistory() {
+        if (!apiKey) return;
+        const historyContainer = document.getElementById('historyList');
+        if (!historyContainer) return;
+
+        try {
+            const res = await fetch(`${V2_BASE}/key/history`, {
+                headers: { 'X-API-Key': apiKey }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.history && data.history.length > 0) {
+                    historyContainer.innerHTML = data.history.map(item => {
+                        const date = new Date(item.created_at).toLocaleString();
+                        const statusClass = item.status === 'success' ? 'success' : 'fail';
+                        const icon = item.status === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+                        return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--card-border); font-size: 13px;">
+                            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 15px;">
+                                <div style="font-weight: 500; color: var(--text-primary); cursor: pointer;" title="${item.url}" onclick="navigator.clipboard.writeText('${item.url}')">${item.url}</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">${date}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">${item.credits_cost} <i class="fas fa-coins" style="font-size: 9px;"></i></span>
+                                <span class="badge ${statusClass}" style="min-width: 80px; text-align: center; border-radius: 4px; padding: 3px 8px; background: ${item.status === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${item.status === 'success' ? '#22c55e' : '#ef4444'};">
+                                    <i class="fas ${icon}"></i> ${item.status}
+                                </span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    historyContainer.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-secondary);"><p data-i18n="history_empty">Chưa có lịch sử</p></div>`;
+                }
+            }
+        } catch (e) {
+            console.error('History fetch error:', e);
+        }
+    }
+
+    const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
+    if (refreshHistoryBtn) {
+        refreshHistoryBtn.addEventListener('click', () => {
+            refreshHistoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            fetchHistory().finally(() => {
+                refreshHistoryBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span data-i18n="btn_refresh">${translations[currentLang].btn_refresh}</span>`;
+            });
+        });
     }
 
     // Poll quota every 10 seconds
@@ -398,15 +436,8 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
             return;
         }
 
-        if (!apiKey) {
-            const msg = currentLang === 'vi' ? 'Vui lòng đặt API Key trước' : 'Please set API Key first';
-            alert(msg);
-            return;
-        }
-
-        const isV2 = apiKey.startsWith('uak_');
-        if (!isV2) {
-            const msg = currentLang === 'vi' ? 'Hệ thống hiện chỉ hỗ trợ Key V2 (bắt đầu bằng uak_)' : 'The system now only supports V2 Keys (starting with uak_)';
+        if (!apiKey || !apiKey.startsWith('uak_')) {
+            const msg = currentLang === 'vi' ? 'Hệ thống hiện chỉ hỗ trợ Key V2 (uak_)' : 'V2 Keys (uak_) required';
             alert(msg);
             return;
         }
@@ -440,67 +471,106 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
     });
 
     async function handleV2Verification(items) {
-        const promises = items.map(async (item) => {
-            const id = item;
-            resultsList.appendChild(createResultItem(id));
+        if (!currentKeyInfo) {
+            const msg = currentLang === 'vi' ? 'Không có thông tin Key!' : 'No Key info!';
+            alert(msg);
+            return;
+        }
 
-            // Normalize URL
-            let url = item;
-            if (!url.startsWith('http')) {
-                url = `https://services.sheerid.com/verify/${item}`;
-            }
+        const isMulti = currentKeyInfo.multi_processing;
+        const concurrency = isMulti ? Math.max(1, currentKeyInfo.max_concurrent) : 1;
+        const cooldown = isMulti ? 0 : (currentKeyInfo.cooldown_seconds || 0) * 1000;
 
-            try {
-                // 1. Submit
-                const submitRes = await fetch(`${V2_BASE}/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'X-API-Key': apiKey,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ url })
-                });
+        let currentIndex = 0;
 
-                const submitData = await submitRes.json();
-                if (!submitRes.ok) throw new Error(submitData.error?.message || 'Submission failed');
+        const worker = async () => {
+            while (currentIndex < items.length) {
+                const index = currentIndex++;
+                const item = items[index];
+                resultsList.appendChild(createResultItem(item));
 
-                const jobId = submitData.job_id;
-                updateResultItem(id, 'processing', 'Queued...');
+                await processV2Item(item);
 
-                // 2. Poll
-                let terminal = false;
-                while (!terminal) {
-                    await new Promise(r => setTimeout(r, 2500));
-                    const pollRes = await fetch(`${V2_BASE}/verify/${jobId}`, {
-                        headers: { 'X-API-Key': apiKey }
-                    });
-                    const pollData = await pollRes.json();
-
-                    if (!pollRes.ok) throw new Error(pollData.error?.message || 'Polling failed');
-
-                    const status = pollData.status;
-                    if (status === 'success') {
-                        updateResultItem(id, 'success', 'Verified successfully!');
-                        terminal = true;
-                        // Record stat event for dots
-                        fetch('/api/stats/record', { method: 'POST', body: JSON.stringify({ success: true }), headers: { 'Content-Type': 'application/json' } }).catch(() => { });
-                    } else if (['failed', 'rejected', 'stale', 'invalid_link', 'cancelled'].includes(status)) {
-                        updateResultItem(id, 'failed', `Error: ${status}`);
-                        terminal = true;
-                        fetch('/api/stats/record', { method: 'POST', body: JSON.stringify({ success: false }), headers: { 'Content-Type': 'application/json' } }).catch(() => { });
-                    } else if (status === 'processing' && pollData.progress) {
-                        const progress = pollData.progress;
-                        updateResultItem(id, 'processing', `[${progress.stage_number}/7] ${progress.message} (${progress.percentage}%)`);
-                    } else {
-                        updateResultItem(id, 'processing', status.charAt(0).toUpperCase() + status.slice(1) + '...');
-                    }
+                if (cooldown > 0 && currentIndex < items.length) {
+                    await new Promise(r => setTimeout(r, cooldown));
                 }
-            } catch (err) {
-                updateResultItem(id, 'failed', err.message);
             }
-        });
+        };
 
-        await Promise.all(promises);
+        const workers = Array.from({ length: concurrency }, () => worker());
+        await Promise.all(workers);
+    }
+
+    async function processV2Item(item) {
+        const id = item;
+        // Normalize URL
+        let url = item;
+        if (!url.startsWith('http')) {
+            url = `https://services.sheerid.com/verify/${item}`;
+        }
+
+        try {
+            // 1. Submit
+            const submitRes = await fetch(`${V2_BASE}/verify`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url })
+            });
+
+            const submitData = await submitRes.json();
+            if (!submitRes.ok) throw new Error(submitData.error?.message || 'Submission failed');
+
+            const jobId = submitData.job_id;
+            updateResultItem(id, 'processing', 'Queued...');
+
+            // 2. Poll
+            let terminal = false;
+            let attempts = 0;
+            while (!terminal) {
+                attempts++;
+                await new Promise(r => setTimeout(r, 2500));
+
+                const pollRes = await fetch(`${V2_BASE}/verify/${jobId}`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                const pollData = await pollRes.json();
+
+                if (!pollRes.ok) throw new Error(pollData.error?.message || 'Polling failed');
+
+                const status = pollData.status;
+                if (status === 'success') {
+                    updateResultItem(id, 'success', 'Verified successfully!');
+                    terminal = true;
+                    // Record stat event for dots
+                    fetch('/api/stats/record', {
+                        method: 'POST',
+                        body: JSON.stringify({ success: true }),
+                        headers: { 'Content-Type': 'application/json' }
+                    }).catch(() => { });
+                } else if (['failed', 'rejected', 'stale', 'invalid_link', 'cancelled'].includes(status)) {
+                    updateResultItem(id, 'failed', `Status: ${status}`);
+                    terminal = true;
+                    fetch('/api/stats/record', {
+                        method: 'POST',
+                        body: JSON.stringify({ success: false }),
+                        headers: { 'Content-Type': 'application/json' }
+                    }).catch(() => { });
+                } else if (status === 'processing' && pollData.progress) {
+                    const progress = pollData.progress;
+                    updateResultItem(id, 'processing', `[${progress.stage_number}/7] ${progress.message} (${progress.percentage}%)`);
+                } else {
+                    updateResultItem(id, 'processing', status.charAt(0).toUpperCase() + status.slice(1) + '...');
+                }
+
+                // Safety timeout
+                if (attempts > 120) throw new Error('Timeout: Verification taking too long');
+            }
+        } catch (err) {
+            updateResultItem(id, 'failed', err.message);
+        }
     }
 
     // Stats Polling
