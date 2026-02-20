@@ -663,39 +663,75 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshStats();
     setInterval(refreshStats, 15000);
 
-    // Maintenance Status Check
+    // Maintenance Status Check (Manual via Backend)
     async function checkMaintenanceStatus() {
         const maintenanceOverlay = document.getElementById('maintenanceOverlay');
-
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            // Use X-API-Key if available to avoid 401, or use a dummy key that fails gracefully
-            const headers = apiKey ? { 'X-API-Key': apiKey } : {};
-
-            const healthRes = await fetch(`${V2_BASE}/key/info`, {
-                method: 'HEAD',
-                headers: headers,
-                signal: controller.signal
-            }).catch(() => ({ ok: false, status: 0 }));
-
-            clearTimeout(timeoutId);
-
-            // 401 means API is UP but key is missing/bad. 503 means UP but busy. Both mean system is "alive".
-            const isV2Alive = healthRes.status === 401 || healthRes.status === 503 || healthRes.ok || healthRes.type === 'opaque';
-            if (maintenanceOverlay) {
-                maintenanceOverlay.style.display = isV2Alive ? 'none' : 'flex';
+            const res = await fetch('/api/maintenance/status');
+            if (res.ok) {
+                const data = await res.json();
+                if (maintenanceOverlay) {
+                    maintenanceOverlay.style.display = data.isMaintenance ? 'flex' : 'none';
+                }
             }
         } catch (e) {
-            // Only show maintenance if it's a real connection error
-            if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
+            console.error('Maintenance check error:', e);
         }
     }
 
-    // Initial check and auto-refresh
-    // checkMaintenanceStatus();
-    // setInterval(checkMaintenanceStatus, 15000);
+    // Admin Unlock Function
+    window.handleAdminUnlock = async function () {
+        const codeInput = document.getElementById('adminCodeInput');
+        const code = codeInput.value;
+        if (!code) return alert('Vui lòng nhập mã!');
 
-    console.log('Batch Verifier UI Ready (V2 Focused)');
+        try {
+            const res = await fetch('/api/maintenance/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code, status: false })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('Hệ thống đã được mở khóa thành công!');
+                checkMaintenanceStatus();
+                codeInput.value = '';
+            } else {
+                alert('Mã quản trị không chính xác!');
+            }
+        } catch (e) {
+            alert('Lỗi kết nối máy chủ!');
+        }
+    };
+
+    // Admin Maintenance Toggle (To turn ON maintenance)
+    window.handleAdminToggleMaintenance = async function () {
+        const code = prompt('Nhập mã quản trị để BẬT chế độ bảo trì:');
+        if (!code) return;
+
+        try {
+            const res = await fetch('/api/maintenance/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code, status: true })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('Đã BẬT chế độ bảo trì thành công!');
+                checkMaintenanceStatus();
+            } else {
+                alert('Mã quản trị không hợp lệ!');
+            }
+        } catch (e) {
+            alert('Lỗi kết nối máy chủ!');
+        }
+    };
+
+    // Initial check and auto-refresh for manual maintenance
+    checkMaintenanceStatus();
+    setInterval(checkMaintenanceStatus, 10000);
+
+    console.log('Batch Verifier UI Ready (Manual Maintenance Mode)');
 });

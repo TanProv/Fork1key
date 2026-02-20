@@ -24,6 +24,10 @@ if (USE_REDIS) {
 // Local stats fallback
 let localStats = { success: 0, fail: 0, events: [] };
 
+// Maintenance State (Manual)
+let isMaintenance = false;
+const MAINTENANCE_CODE = process.env.MAINTENANCE_CODE || "thientandepzai";
+
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -64,6 +68,22 @@ app.post('/api/stats/record', async (req, res) => {
     if (localStats.events.length > 100) localStats.events.shift();
   }
   res.json({ success: true });
+});
+
+// API: Maintenance Status
+app.get('/api/maintenance/status', (req, res) => {
+  res.json({ isMaintenance });
+});
+
+// API: Toggle Maintenance (Manual Control)
+app.post('/api/maintenance/toggle', (req, res) => {
+  const { code, status } = req.body;
+  if (code === MAINTENANCE_CODE) {
+    isMaintenance = status;
+    console.log(`[Maintenance] Manual override: ${isMaintenance ? 'ON' : 'OFF'}`);
+    return res.json({ success: true, isMaintenance });
+  }
+  res.status(403).json({ success: false, message: 'Invalid Admin Code' });
 });
 
 // API: Get Recent Stats
