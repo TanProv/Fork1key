@@ -104,6 +104,19 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                         <button class="btn-api-key">
                             <i class="fas fa-key"></i> Đặt API Key
                         </button>
+                        <div id="quotaDisplay"
+                            style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--card-border); font-size: 13px; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-secondary);">Số dư:</span>
+                                <span style="font-weight: 600;"><span id="quotaRemaining">0</span> / <span
+                                        id="quotaTotal">0</span> <i class="fas fa-coins"
+                                        style="color: #f59e0b; font-size: 11px;"></i></span>
+                            </div>
+                            <div id="keyInfoExtra"
+                                style="display: none; font-size: 11px; color: var(--text-secondary); margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--card-border);">
+                                <span id="keyNameDisplay"></span> • <span id="keyTypeDisplay"></span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="action-footer">

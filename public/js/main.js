@@ -48,42 +48,62 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshQuota(); // Load quota immediately
     }
 
+    const V2_BASE = 'https://sheeridbot.com/api/v2';
+
     // Quota Refresh Function
     async function refreshQuota() {
         if (!apiKey) {
             document.getElementById('quotaDisplay').style.display = 'none';
             return;
         }
-        try {
-            const res = await fetch(`/api/user/quota?key=${encodeURIComponent(apiKey)}`);
-            if (res.ok) {
-                const data = await res.json();
-                document.getElementById('quotaRemaining').textContent = data.remaining.toLocaleString();
-                document.getElementById('quotaTotal').textContent = data.quota.toLocaleString();
-                document.getElementById('quotaDisplay').style.display = 'flex';
-                document.getElementById('quotaDisplay').style.alignItems = 'center';
-                document.getElementById('quotaDisplay').style.gap = '6px';
 
-                // Color coding
-                const remaining = data.remaining;
-                const quotaElem = document.getElementById('quotaRemaining');
-                if (remaining < 10) {
-                    quotaElem.style.color = '#ef4444';
-                } else if (remaining < 100) {
-                    quotaElem.style.color = '#f59e0b';
+        const isV2 = apiKey.startsWith('uak_');
+
+        try {
+            if (isV2) {
+                const res = await fetch(`${V2_BASE}/key/info`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('quotaRemaining').textContent = data.available_credits.toLocaleString();
+                    document.getElementById('quotaTotal').textContent = data.total_credits.toLocaleString();
+                    document.getElementById('quotaDisplay').style.display = 'flex';
+
+                    document.getElementById('keyInfoExtra').style.display = 'block';
+                    document.getElementById('keyNameDisplay').textContent = data.key_name;
+                    document.getElementById('keyTypeDisplay').textContent = data.key_type === 'multi_use' ? 'Multi-use' : 'Single-use';
+
+                    const remaining = data.available_credits;
+                    const quotaElem = document.getElementById('quotaRemaining');
+                    quotaElem.style.color = remaining < 1 ? '#ef4444' : (remaining < 5 ? '#f59e0b' : '#22c55e');
                 } else {
-                    quotaElem.style.color = '#22c55e';
+                    document.getElementById('quotaDisplay').style.display = 'none';
                 }
             } else {
-                document.getElementById('quotaDisplay').style.display = 'none';
+                // Legacy Quota
+                const res = await fetch(`/api/user/quota?key=${encodeURIComponent(apiKey)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('quotaRemaining').textContent = data.remaining.toLocaleString();
+                    document.getElementById('quotaTotal').textContent = data.quota.toLocaleString();
+                    document.getElementById('quotaDisplay').style.display = 'flex';
+                    document.getElementById('keyInfoExtra').style.display = 'none';
+
+                    const remaining = data.remaining;
+                    const quotaElem = document.getElementById('quotaRemaining');
+                    quotaElem.style.color = remaining < 10 ? '#ef4444' : (remaining < 100 ? '#f59e0b' : '#22c55e');
+                } else {
+                    document.getElementById('quotaDisplay').style.display = 'none';
+                }
             }
         } catch (e) {
             console.error('Quota fetch error:', e);
         }
     }
 
-    // Poll quota every 5 seconds
-    setInterval(refreshQuota, 5000);
+    // Poll quota every 10 seconds (less frequent for V2 to be polite)
+    setInterval(refreshQuota, 10000);
 
     apiKeyBtn.addEventListener('click', () => {
         const input = prompt('Nhập API Key / HCaptcha Token của bạn:', apiKey);
@@ -222,16 +242,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const isV2 = apiKey.startsWith('uak_');
+
         // Parse IDs/URLs
-        const verificationIds = text.split('\n')
+        let verificationItems = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        if (verificationIds.length === 0) return;
-
-        // Reset stats
-        verificationStats = { success: 0, failed: 0, total: verificationIds.length, completed: 0 };
-        resultItems = {};
+        if (verificationItems.length === 0) return;
 
         // UI Prep
         startBtn.disabled = true;
@@ -242,8 +260,85 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState.style.display = 'none';
         progressSection.style.display = 'block';
         resultsList.innerHTML = '';
+        verificationStats = { success: 0, failed: 0, total: verificationItems.length, completed: 0 };
+        resultItems = {};
         updateStatsUI();
 
+        if (isV2) {
+            // API V2 Flow (Concurrent submission and polling)
+            await handleV2Verification(verificationItems);
+        } else {
+            // Legacy V1 Flow (Legacy SSE)
+            await handleV1Verification(verificationItems);
+        }
+
+        startBtn.disabled = false;
+        startBtn.innerHTML = originalBtnText;
+        refreshQuota();
+    });
+
+    async function handleV2Verification(items) {
+        const promises = items.map(async (item) => {
+            const id = item;
+            resultsList.appendChild(createResultItem(id));
+
+            // Normalize URL
+            let url = item;
+            if (!url.startsWith('http')) {
+                url = `https://services.sheerid.com/verify/${item}`;
+            }
+
+            try {
+                // 1. Submit
+                const submitRes = await fetch(`${V2_BASE}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const submitData = await submitRes.json();
+                if (!submitRes.ok) throw new Error(submitData.error?.message || 'Submission failed');
+
+                const jobId = submitData.job_id;
+                updateResultItem(id, 'processing', 'Queued...');
+
+                // 2. Poll
+                let terminal = false;
+                while (!terminal) {
+                    await new Promise(r => setTimeout(r, 2500));
+                    const pollRes = await fetch(`${V2_BASE}/verify/${jobId}`, {
+                        headers: { 'X-API-Key': apiKey }
+                    });
+                    const pollData = await pollRes.json();
+
+                    if (!pollRes.ok) throw new Error(pollData.error?.message || 'Polling failed');
+
+                    const status = pollData.status;
+                    if (status === 'success') {
+                        updateResultItem(id, 'success', 'Verified successfully!');
+                        terminal = true;
+                    } else if (['failed', 'rejected', 'stale', 'invalid_link', 'cancelled'].includes(status)) {
+                        updateResultItem(id, 'failed', `Error: ${status}`);
+                        terminal = true;
+                    } else if (status === 'processing' && pollData.progress) {
+                        const progress = pollData.progress;
+                        updateResultItem(id, 'processing', `[${progress.stage_number}/7] ${progress.message} (${progress.percentage}%)`);
+                    } else {
+                        updateResultItem(id, 'processing', status.charAt(0).toUpperCase() + status.slice(1) + '...');
+                    }
+                }
+            } catch (err) {
+                updateResultItem(id, 'failed', err.message);
+            }
+        });
+
+        await Promise.all(promises);
+    }
+
+    async function handleV1Verification(verificationIds) {
         // Create pending items
         verificationIds.forEach(id => {
             resultsList.appendChild(createResultItem(id));
@@ -271,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errorText);
             }
 
-            // Read SSE Stream
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -298,32 +392,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-
-            // Refresh quota after completion
-            refreshQuota();
-
         } catch (error) {
             console.error('Fetch error:', error);
             alert('❌ ' + error.message);
-        } finally {
-            startBtn.disabled = false;
-            startBtn.innerHTML = originalBtnText;
         }
-    });
+    }
 
     function handleSSEData(data) {
-        // Handle different data formats from upstream
         if (data.verificationId) {
             const id = data.verificationId;
             const status = data.currentStep === 'success' ? 'success' :
                 (data.currentStep === 'error' || data.error) ? 'failed' : 'processing';
             const message = data.message || data.currentStep || '';
             updateResultItem(id, status, message);
-        } else if (data.error) {
-            console.error('SSE Error:', data.error);
-        } else if (data.completed !== undefined) {
-            // Batch completed event
-            console.log('Batch completed:', data);
         }
     }
 
