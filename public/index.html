@@ -9,6 +9,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
+    <script>
+        // Chống chuột phải
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Chống phím tắt DevTools
+        document.onkeydown = function (e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) return false;
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // View Source
+        };
+
+        // Bẫy Debugger
+        (function () {
+            const block = function () {
+                setInterval(function () {
+                    debugger;
+                }, 50);
+            };
+            try {
+                block();
+            } catch (err) { }
+        })();
+    </script>
 </head>
 
 <body>
