@@ -128,10 +128,9 @@ body {
 
 h2 {
     font-family: 'Cinzel', serif;
-    /* Or similar fancy font */
     font-size: 1.5rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .header-right {
@@ -414,8 +413,8 @@ textarea::placeholder {
 }
 
 .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    justify-content: center;
     gap: 2rem;
 }
 
@@ -771,4 +770,11 @@ textarea::placeholder {
     100% {
         transform: rotate(0deg);
     }
+}
+
+.price-tag {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 1rem 0;
 }
