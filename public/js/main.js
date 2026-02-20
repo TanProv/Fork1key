@@ -440,40 +440,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Upstream Status Check
     async function checkUpstreamStatus() {
+        const dot = document.getElementById('upstreamStatusDot');
+        const text = document.getElementById('upstreamStatusText');
+        const ping = document.getElementById('upstreamPing');
+        const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+
         try {
+            // Check V2 API Health (Headless request)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const healthRes = await fetch(`${V2_BASE}/key/info`, {
+                method: 'HEAD',
+                mode: 'no-cors', // Standard fetch to check reachability
+                signal: controller.signal
+            }).catch(() => ({ ok: false, status: 0 }));
+
+            clearTimeout(timeoutId);
+
+            // 401 is "Online" for V2 (since we don't provide a key)
+            // or 0 if CORS blocks but it still "connected" (no-cors trick)
+            const isV2Alive = healthRes.status === 401 || healthRes.ok || healthRes.type === 'opaque';
+
+            if (isV2Alive) {
+                maintenanceOverlay.style.display = 'none';
+                dot.style.background = '#22c55e';
+                text.textContent = 'Sẵn sàng';
+                text.style.color = '#22c55e';
+            } else {
+                maintenanceOverlay.style.display = 'flex';
+                dot.style.background = '#ef4444';
+                text.textContent = 'Bảo trì';
+                text.style.color = '#ef4444';
+            }
+
+            // Also check our own proxy status for ping
             const res = await fetch('/api/upstream-status');
             if (res.ok) {
                 const data = await res.json();
-                const dot = document.getElementById('upstreamStatusDot');
-                const text = document.getElementById('upstreamStatusText');
-                const ping = document.getElementById('upstreamPing');
-
-                if (data.status === 'online') {
-                    dot.style.background = '#22c55e';
-                    text.textContent = 'Online';
-                    text.style.color = '#22c55e';
-                } else if (data.status === 'degraded') {
-                    dot.style.background = '#f59e0b';
-                    text.textContent = 'Chậm';
-                    text.style.color = '#f59e0b';
-                } else {
-                    dot.style.background = '#ef4444';
-                    text.textContent = 'Offline';
-                    text.style.color = '#ef4444';
-                }
-
                 if (data.ping) {
                     ping.textContent = `(${data.ping}ms)`;
                 }
             }
         } catch (e) {
-            console.error('Upstream check error:', e);
+            console.error('Health check error:', e);
+            maintenanceOverlay.style.display = 'flex';
+            dot.style.background = '#ef4444';
+            text.textContent = 'Bảo trì';
+            text.style.color = '#ef4444';
         }
     }
 
-    // Initial check and auto-refresh
+    // Initial check and auto-refresh (Every 15 seconds)
     checkUpstreamStatus();
-    setInterval(checkUpstreamStatus, 60000); // Check every 60 seconds
+    setInterval(checkUpstreamStatus, 15000);
 
     console.log('Batch Verifier UI Ready');
 });
