@@ -22,28 +22,214 @@ document.addEventListener('DOMContentLoaded', () => {
             document.documentElement.style.setProperty('--text-primary', '#0f172a');
             document.documentElement.style.setProperty('--text-secondary', '#64748b');
             document.documentElement.style.setProperty('--card-border', '#e2e8f0');
-            themeToggle.innerHTML = '<i class="fas fa-moon"></i> Chế độ tối';
         } else {
             document.documentElement.style.setProperty('--bg-dark', '#0f172a');
             document.documentElement.style.setProperty('--card-bg', '#111e36');
             document.documentElement.style.setProperty('--text-primary', '#e2e8f0');
             document.documentElement.style.setProperty('--text-secondary', '#94a3b8');
             document.documentElement.style.setProperty('--card-border', '#1e293b');
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+        }
+        updateTranslations(); // Refreshes button text
+    }
+
+    // Language i18n
+    const translations = {
+        vi: {
+            theme_light: 'Chế độ sáng',
+            theme_dark: 'Chế độ tối',
+            header_desc: 'Xác minh SheerID hàng loạt siêu tốc - Hỗ trợ API V2',
+            btn_guide: 'Hướng dẫn xác minh',
+            guide_warn: '⚠️ Phải đọc trước khi thực hiện',
+            stats_label: '100 hoạt động gần nhất',
+            success: 'thành công',
+            fail: 'thất bại',
+            api_server: 'API Server',
+            checking: 'Đang kiểm tra...',
+            ready: 'Sẵn sàng',
+            m_status: 'Bảo trì',
+            input_title: 'Nhập Dữ Liệu',
+            input_hint: 'Dán trực tiếp URL - hệ thống sẽ tự động trích xuất ID xác minh',
+            btn_api_key: 'Đặt API Key',
+            btn_api_key_set: 'Đã có API Key',
+            balance: 'Số dư:',
+            lines_entered: 'dòng đã nhập',
+            slots_empty: 'slot trống',
+            btn_start: 'Bắt Đầu Xác Minh',
+            results_title: 'Kết Quả',
+            btn_clear: 'Xóa',
+            btn_export: 'Xuất file',
+            completed: 'hoàn tất',
+            no_results: 'Chưa có kết quả',
+            empty_hint: 'Nhập ID xác minh và bấm Bắt đầu',
+            pricing_title: 'Bảng Giá Key Xác Minh',
+            pricing_desc: 'Chọn gói phù hợp để nâng cấp tài khoản của bạn ngay hôm nay',
+            tier_personal: 'Gói Cá Nhân',
+            tier_pro: 'Gói Chuyên Nghiệp',
+            tier_agent: 'Gói Đại Lý',
+            p_1key: '1 Key xác minh',
+            p_20keys: '20 Keys xác minh',
+            p_100keys: '100 Keys xác minh',
+            p_instant: 'Hiệu lực ngay lập tức',
+            p_support: 'Hỗ trợ 24/7',
+            p_save15: 'Tiết kiệm 15%',
+            p_priority: 'Ưu tiên hỗ trợ',
+            p_best_price: 'Giá tốt nhất thị trường',
+            p_partner: 'Partner ưu tiên',
+            buy_tg: 'Mua Key qua Telegram: @leo_dfx',
+            buy_discord: 'Mua Key qua Discord',
+            faq_title: 'Câu hỏi thường gặp (FAQ)',
+            faq_warn: 'Nếu tác vụ thất bại, vui lòng lấy liên kết mới. Không nên gửi lại cùng một liên kết nhiều lần.',
+            faq_1_q: 'Lấy lại liên kết mới',
+            faq_1_a: 'Tắt VPN, Truy cập lại trang ưu đãi dành cho sinh viên để bắt đầu lại quy trình xác thực.',
+            faq_2_q: 'Sao chép đúng cách',
+            faq_2_a: 'Khi nút hoặc liên kết xác thực hiện ra, hãy nhấp chuột phải và chọn "Sao chép địa chỉ liên kết" (Copy link address). Tuyệt đối không nhấp chuột trái để tránh làm kích hoạt mã token một lần.',
+            faq_3_q: 'API Key lấy ở đâu?',
+            faq_3_a: 'Vui lòng liên hệ Admin để nhận mã API Key hợp lệ cho việc sử dụng công cụ xác minh này.',
+            m_title: 'Hệ thống đang bảo trì',
+            m_desc: 'API SheerID hiện đang tạm ngưng để cập nhật hoặc bảo trì định kỳ. Hệ thống sẽ tự động mở lại khi dịch vụ sẵn sàng.',
+            m_status: 'Đang chờ kết nối API...',
+            m_contact: 'Nếu cần hỗ trợ gấp, vui lòng liên hệ',
+            placeholder: `Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
+US IP + Fingerprint browser.
+Đăng nhập trực tiếp không cần xác minh!!!
+Khuyên dùng: Dùng IP Mỹ gốc và ít người dùng. Tránh dùng IP 'Data Center' bị nát.
+
+I'm feeling lucky -> Sử dụng một trong các trường đã hoạt động tốt trong 2 ngày qua.
+KHÔNG CẦN ĐĂNG NHẬP! HOÀN TOÀN MIỄN PHÍ!
+Trang web này sẽ duy trì lâu nhất có thể.
+Nếu token hết hạn hoặc đã xử lý -> Hãy thử lấy lại link ? mới.
+Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).`
+        },
+        en: {
+            theme_light: 'Light Mode',
+            theme_dark: 'Dark Mode',
+            header_desc: 'Lightning Fast SheerID Batch Verifier - API V2 Supported',
+            btn_guide: 'Verification Guide',
+            guide_warn: '⚠️ Must read before proceeding',
+            stats_label: 'Last 100 verifications',
+            success: 'success',
+            fail: 'failed',
+            api_server: 'API Server',
+            checking: 'Checking...',
+            ready: 'Ready',
+            m_status: 'Maintenance',
+            input_title: 'Input Data',
+            input_hint: 'Paste URL directly - system extracts verification ID automatically',
+            btn_api_key: 'Set API Key',
+            btn_api_key_set: 'API Key Set',
+            balance: 'Balance:',
+            lines_entered: 'lines entered',
+            slots_empty: 'slots available',
+            btn_start: 'Start Verification',
+            results_title: 'Results',
+            btn_clear: 'Clear',
+            btn_export: 'Export',
+            completed: 'completed',
+            no_results: 'No results yet',
+            empty_hint: 'Enter Verification ID and click Start',
+            pricing_title: 'Verification Key Pricing',
+            pricing_desc: 'Choose a package to upgrade your account today',
+            tier_personal: 'Personal Tier',
+            tier_pro: 'Professional Tier',
+            tier_agent: 'Reseller Tier',
+            p_1key: '1 Verification Key',
+            p_20keys: '20 Verification Keys',
+            p_100keys: '100 Verification Keys',
+            p_instant: 'Instant activation',
+            p_support: '24/7 Support',
+            p_save15: 'Save 15%',
+            p_priority: 'Priority support',
+            p_best_price: 'Best market price',
+            p_partner: 'Priority Partner',
+            buy_tg: 'Buy Key via Telegram: @leo_dfx',
+            buy_discord: 'Buy Key via Discord',
+            faq_title: 'Frequently Asked Questions (FAQ)',
+            faq_warn: 'If a task fails, please get a new link. Do not resubmit the same link multiple times.',
+            faq_1_q: 'Get a new link',
+            faq_1_a: 'Turn off VPN, re-access the student offer page to restart the verification process.',
+            faq_2_q: 'Copying correctly',
+            faq_2_a: 'When the button or link appears, right-click and select "Copy link address". Do not left-click to avoid triggering one-time tokens.',
+            faq_3_q: 'Where to get API Key?',
+            faq_3_a: 'Please contact Admin to receive a valid API Key for using this verification tool.',
+            m_title: 'System Maintenance',
+            m_desc: 'The SheerID API is currently suspended for updates or regular maintenance. The system will unlock once the service is ready.',
+            m_status: 'Waiting for API connection...',
+            m_contact: 'For urgent support, please contact',
+            placeholder: `Enter Verification IDs or URLs below, one per line...
+US IP + Fingerprint browser.
+Direct login without verification!!!
+Recommended: Use residential US IP. Avoid exhausted Data Center IPs.
+
+I'm feeling lucky -> Use one of the fields that worked well in the past 2 days.
+LOGIN NOT REQUIRED! COMPLETELY FREE!
+This site will stay active as long as possible.
+If token expired or processed -> Try getting a new link ?.
+This tool is for Goo Student Discount Verification IDs only (US IP).`
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'vi';
+
+    function updateTranslations() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (key === 'theme_light' || key === 'theme_dark') {
+                const icon = isLightMode ? '<i class="fas fa-moon"></i> ' : '<i class="fas fa-sun"></i> ';
+                el.innerHTML = icon + translations[currentLang][isLightMode ? 'theme_dark' : 'theme_light'];
+            } else if (translations[currentLang][key]) {
+                el.innerHTML = translations[currentLang][key];
+            }
+        });
+
+        // Placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (translations[currentLang][key]) {
+                el.placeholder = translations[currentLang][key];
+            }
+        });
+
+        // API Key button special handling
+        if (apiKey) {
+            apiKeyBtn.innerHTML = `<i class="fas fa-check"></i> ${translations[currentLang].btn_api_key_set}`;
+        } else {
+            apiKeyBtn.innerHTML = `<i class="fas fa-key"></i> ${translations[currentLang].btn_api_key}`;
         }
     }
 
+    // Initialize Language Switcher Buttons
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lang = btn.getAttribute('data-lang');
+            setLanguage(lang);
+        });
+    });
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+
+        // Update Active Class
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+
+        updateTranslations();
+    }
+
+    // Initial translation call
+    setLanguage(currentLang);
+
     // Input Handling
     const textarea = document.getElementById('verificationInput');
-    const statsEntered = document.querySelector('.stats-row span:first-child');
-    const statsAvailable = document.querySelector('.stats-row span:last-child');
+    const statsEntered = document.getElementById('lineCount');
+    const statsAvailable = document.getElementById('slotsEmpty');
     const startBtn = document.getElementById('startBtn');
     const apiKeyBtn = document.querySelector('.btn-api-key');
 
     // Store API key
     let apiKey = localStorage.getItem('apiKey') || '';
     if (apiKey) {
-        apiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Đã có API Key';
         apiKeyBtn.classList.add('set');
         refreshQuota(); // Load quota immediately
     }
@@ -106,19 +292,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshQuota, 10000);
 
     apiKeyBtn.addEventListener('click', () => {
-        const input = prompt('Nhập API Key / HCaptcha Token của bạn:', apiKey);
+        const promptMsg = currentLang === 'vi' ? 'Nhập API Key / HCaptcha Token của bạn:' : 'Enter your API Key / HCaptcha Token:';
+        const input = prompt(promptMsg, apiKey);
         if (input !== null) {
             apiKey = input.trim();
             localStorage.setItem('apiKey', apiKey);
             if (apiKey) {
-                apiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Đã có API Key';
                 apiKeyBtn.classList.add('set');
                 refreshQuota(); // Refresh immediately after setting
             } else {
-                apiKeyBtn.innerHTML = '<i class="fas fa-key"></i> Đặt API Key';
                 apiKeyBtn.classList.remove('set');
                 document.getElementById('quotaDisplay').style.display = 'none';
             }
+            updateTranslations();
         }
     });
 
@@ -133,8 +319,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = textarea.value.trim();
         const lines = text ? text.split('\n').filter(line => line.trim()).length : 0;
 
-        statsEntered.textContent = `${lines} dòng đã nhập`;
-        statsAvailable.textContent = `${1000 - lines}/1000 slot trống`;
+        if (statsEntered) statsEntered.textContent = lines;
+        if (statsAvailable) statsAvailable.textContent = 1000 - lines;
     }
 
     // API Integration
@@ -233,12 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
     startBtn.addEventListener('click', async () => {
         const text = textarea.value.trim();
         if (!text) {
-            alert('Vui lòng nhập ID xác minh hoặc URL');
+            const msg = currentLang === 'vi' ? 'Vui lòng nhập ID xác minh hoặc URL' : 'Please enter Verification IDs or URLs';
+            alert(msg);
             return;
         }
 
         if (!apiKey) {
-            alert('Vui lòng đặt API Key trước');
+            const msg = currentLang === 'vi' ? 'Vui lòng đặt API Key trước' : 'Please set API Key first';
+            alert(msg);
             return;
         }
 
@@ -253,8 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // UI Prep
         startBtn.disabled = true;
-        const originalBtnText = startBtn.innerHTML;
-        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        const originalBtnHTML = startBtn.innerHTML;
+        startBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${translations[currentLang].checking}`;
 
         // Show progress UI
         emptyState.style.display = 'none';
@@ -273,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         startBtn.disabled = false;
-        startBtn.innerHTML = originalBtnText;
+        startBtn.innerHTML = originalBtnHTML;
         refreshQuota();
     });
 
@@ -427,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         dotsContainer.appendChild(dot);
                     });
                 } else {
-                    dotsContainer.innerHTML = '<span class="loading-dots">Chưa có hoạt động</span>';
+                    dotsContainer.innerHTML = `<span class="loading-dots">${translations[currentLang].no_results}</span>`;
                 }
             }
         } catch (e) {
@@ -465,12 +653,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isV2Alive) {
                 maintenanceOverlay.style.display = 'none';
                 dot.style.background = '#22c55e';
-                text.textContent = 'Sẵn sàng';
+                text.textContent = translations[currentLang].ready;
                 text.style.color = '#22c55e';
             } else {
                 maintenanceOverlay.style.display = 'flex';
                 dot.style.background = '#ef4444';
-                text.textContent = 'Bảo trì';
+                text.textContent = translations[currentLang].m_status;
                 text.style.color = '#ef4444';
             }
 
@@ -486,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Health check error:', e);
             maintenanceOverlay.style.display = 'flex';
             dot.style.background = '#ef4444';
-            text.textContent = 'Bảo trì';
+            text.textContent = translations[currentLang].m_status;
             text.style.color = '#ef4444';
         }
     }

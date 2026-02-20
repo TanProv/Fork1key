@@ -958,20 +958,18 @@ async function updateStats(isSuccess) {
 // Stats: Endpoint
 app.get('/api/stats/recent', async (req, res) => {
   const now = Date.now();
-  const tenMinsAgo = now - 10 * 60 * 1000;
+  const oneDayAgo = now - 24 * 60 * 60 * 1000; // Look back up to 24h to find last 100
   let success = 0;
   let fail = 0;
   let events_list = [];
 
   if (USE_REDIS && storage.redis) {
     try {
-      const events = await storage.redis.zrange('stats_events', tenMinsAgo, now, { byScore: true });
+      const events = await storage.redis.zrange('stats_events', oneDayAgo, now, { byScore: true });
       events.forEach(member => {
         if (typeof member === 'string') {
           const parts = member.split(':');
           const isSuccess = parts[1] === '1';
-          if (isSuccess) success++;
-          else fail++;
           events_list.push(isSuccess ? 1 : 0);
         }
       });
@@ -981,17 +979,20 @@ app.get('/api/stats/recent', async (req, res) => {
   } else {
     if (global.localStats) {
       global.localStats.forEach(s => {
-        if (s.ts > tenMinsAgo) {
-          if (s.success) success++;
-          else fail++;
+        if (s.ts > oneDayAgo) {
           events_list.push(s.success ? 1 : 0);
         }
       });
     }
   }
 
-  // Limit to last 50 dots to keep UI clean
-  const recent_events = events_list.slice(-50);
+  // Get last 100
+  const recent_events = events_list.slice(-100);
+  recent_events.forEach(status => {
+    if (status === 1) success++;
+    else fail++;
+  });
+
   res.json({ success, fail, events: recent_events });
 });
 

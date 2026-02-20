@@ -18,14 +18,15 @@
             <div class="maintenance-icon">
                 <i class="fas fa-tools animation-pulse"></i>
             </div>
-            <h2>Hệ thống đang bảo trì</h2>
-            <p>API SheerID hiện đang tạm ngưng để cập nhật hoặc bảo trì định kỳ. Hệ thống sẽ tự động mở lại khi dịch vụ
-                sẵn sàng.</p>
+            <h2 data-i18n="m_title">Hệ thống đang bảo trì</h2>
+            <p data-i18n="m_desc">API SheerID hiện đang tạm ngưng để cập nhật hoặc bảo trì định kỳ. Hệ thống sẽ tự động
+                mở lại khi dịch vụ sẵn sàng.</p>
             <div class="maintenance-status">
-                <span class="status-dot-blink"></span> Đang chờ kết nối API...
+                <span class="status-dot-blink"></span> <span data-i18n="m_status">Đang chờ kết nối API...</span>
             </div>
             <div class="contact-hint">
-                Nếu cần hỗ trợ gấp, vui lòng liên hệ <a href="https://t.me/leo_dfx" target="_blank">@leo_dfx</a>
+                <span data-i18n="m_contact">Nếu cần hỗ trợ gấp, vui lòng liên hệ</span> <a href="https://t.me/leo_dfx"
+                    target="_blank">@leo_dfx</a>
             </div>
         </div>
     </div>
@@ -33,15 +34,16 @@
     <div class="app-container">
         <div class="header-section">
             <h1><i class="fas fa-check-double"></i> Batch Verifier</h1>
-            <p>Xác minh SheerID hàng loạt siêu tốc - Hỗ trợ API V2</p>
+            <p data-i18n="header_desc">Xác minh SheerID hàng loạt siêu tốc - Hỗ trợ API V2</p>
             <div class="hero-actions"
                 style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; justify-content: center;">
                 <a href="/guide.html" class="btn-primary"
                     style="background: linear-gradient(135deg, #f59e0b, #ea580c); text-decoration: none; padding: 12px 25px; font-size: 15px; display: inline-flex; align-items: center; gap: 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); font-weight: 600; border: 2px solid rgba(255, 255, 255, 0.2);">
-                    <i class="fas fa-book-open"></i> Hướng dẫn xác minh
+                    <i class="fas fa-book-open"></i> <span data-i18n="btn_guide">Hướng dẫn xác minh</span>
                 </a>
                 <span
-                    style="color: #fbbf24; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
+                    style="color: #fbbf24; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;"
+                    data-i18n="guide_warn">
                     ⚠️ Phải đọc trước khi thực hiện
                 </span>
             </div>
@@ -49,32 +51,44 @@
             <!-- Modern Activity Widget -->
             <div id="statsWidget" class="activity-widget">
                 <div class="activity-label">
-                    <i class="fas fa-pulse fa-heartbeat"></i> Hoạt động gần đây (10 phút)
+                    <i class="fas fa-pulse fa-heartbeat"></i> <span data-i18n="stats_label">100 hoạt động gần
+                        nhất</span>
                 </div>
                 <div id="statsDots" class="dots-container">
                     <!-- Dots will be injected by JS -->
                     <span class="loading-dots">Đang tải dữ liệu...</span>
                 </div>
                 <div class="activity-counts">
-                    <span class="count-item success"><span id="statsSuccess">0</span> thành công</span>
-                    <span class="count-item fail"><span id="statsFail">0</span> thất bại</span>
+                    <span class="count-item success"><span id="statsSuccess">0</span> <span data-i18n="success">thành
+                            công</span></span>
+                    <span class="count-item fail"><span id="statsFail">0</span> <span data-i18n="fail">thất
+                            bại</span></span>
                 </div>
             </div>
 
             <!-- Upstream Status Widget -->
             <div id="upstreamStatusWidget"
                 style="background: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--card-border); display: inline-flex; gap: 12px; align-items: center; margin-top: 8px; font-size: 13px;">
-                <span style="color: var(--text-secondary);"><i class="fas fa-server"></i> API Server:</span>
+                <span style="color: var(--text-secondary);"><i class="fas fa-server"></i> <span
+                        data-i18n="api_server">API Server</span>:</span>
                 <span id="upstreamStatusBadge" style="display: inline-flex; align-items: center; gap: 6px;">
                     <span id="upstreamStatusDot"
                         style="width: 8px; height: 8px; border-radius: 50%; background: #6b7280;"></span>
-                    <span id="upstreamStatusText" style="color: var(--text-secondary);">Đang kiểm tra...</span>
+                    <span id="upstreamStatusText" style="color: var(--text-secondary);" data-i18n="checking">Đang kiểm
+                        tra...</span>
                 </span>
                 <span id="upstreamPing" style="color: var(--text-secondary); font-size: 12px;"></span>
             </div>
-            <button class="theme-toggle" id="themeToggle">
-                <i class="fas fa-sun"></i> Chế độ sáng
-            </button>
+
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="vi">VI</button>
+                    <button class="lang-btn" data-lang="en">EN</button>
+                </div>
+                <button class="theme-toggle" id="themeToggle" style="margin: 0;">
+                    <i class="fas fa-sun"></i> <span data-i18n="theme_light">Chế độ sáng</span>
+                </button>
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -83,7 +97,7 @@
                 <div class="card-header user-select-none">
                     <div class="header-left">
                         <i class="fas fa-pen-to-square"></i>
-                        <h2>Nhập Dữ Liệu</h2>
+                        <h2 data-i18n="input_title">Nhập Dữ Liệu</h2>
                     </div>
                     <div class="header-right">
                         <div class="dropdown">
@@ -93,14 +107,14 @@
                         </div>
                         <div class="status-badge">
                             <span class="status-dot"></span>
-                            Sẵn sàng
+                            <span data-i18n="ready">Sẵn sàng</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="card-body">
                     <div class="textarea-container">
-                        <textarea id="verificationInput" placeholder="Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
+                        <textarea id="verificationInput" data-i18n-placeholder="placeholder" placeholder="Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
 US IP + Fingerprint browser.
 Đăng nhập trực tiếp không cần xác minh!!!
 Khuyên dùng: Dùng IP Mỹ gốc và ít người dùng. Tránh dùng IP 'Data Center' bị nát.
@@ -114,17 +128,18 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
 
                     <div class="info-box">
                         <i class="fas fa-lightbulb"></i>
-                        <span>Dán trực tiếp URL - hệ thống sẽ tự động trích xuất ID xác minh</span>
+                        <span data-i18n="input_hint">Dán trực tiếp URL - hệ thống sẽ tự động trích xuất ID xác
+                            minh</span>
                     </div>
 
                     <div class="api-key-section">
                         <button class="btn-api-key">
-                            <i class="fas fa-key"></i> Đặt API Key
+                            <i class="fas fa-key"></i> <span data-i18n="btn_api_key">Đặt API Key</span>
                         </button>
                         <div id="quotaDisplay"
                             style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--card-border); font-size: 13px; flex-direction: column; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: var(--text-secondary);">Số dư:</span>
+                                <span style="color: var(--text-secondary);" data-i18n="balance">Số dư:</span>
                                 <span style="font-weight: 600;"><span id="quotaRemaining">0</span> / <span
                                         id="quotaTotal">0</span> <i class="fas fa-coins"
                                         style="color: #f59e0b; font-size: 11px;"></i></span>
@@ -138,15 +153,17 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
 
                     <div class="action-footer">
                         <div class="stats-row">
-                            <span>0 dòng đã nhập</span>
-                            <span>1000/1000 slot trống</span>
+                            <span><span id="lineCount">0</span> <span data-i18n="lines_entered">dòng đã
+                                    nhập</span></span>
+                            <span><span id="slotsEmpty">1000</span> / 1000 <span data-i18n="slots_empty">slot
+                                    trống</span></span>
                         </div>
                         <div class="action-buttons">
                             <button class="btn-settings" title="Cài đặt">
                                 <i class="fas fa-plus"></i>
                             </button>
                             <button class="btn-start" id="startBtn">
-                                <i class="fas fa-play"></i> Bắt Đầu Xác Minh
+                                <i class="fas fa-play"></i> <span data-i18n="btn_start">Bắt Đầu Xác Minh</span>
                             </button>
                         </div>
                     </div>
@@ -158,14 +175,14 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                 <div class="card-header">
                     <div class="header-left">
                         <i class="fas fa-file-lines"></i>
-                        <h2>Kết Quả</h2>
+                        <h2 data-i18n="results_title">Kết Quả</h2>
                     </div>
                     <div class="header-right">
                         <button class="btn-icon-text" id="clearResultsBtn">
-                            <i class="fas fa-trash-can"></i> Xóa
+                            <i class="fas fa-trash-can"></i> <span data-i18n="btn_clear">Xóa</span>
                         </button>
                         <button class="btn-icon-text" id="exportResultsBtn">
-                            <i class="fas fa-download"></i> Xuất file
+                            <i class="fas fa-download"></i> <span data-i18n="btn_export">Xuất file</span>
                         </button>
                     </div>
                 </div>
@@ -178,8 +195,8 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                             style="height: 4px; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e); border-radius: 2px; margin-bottom: 10px;">
                         </div>
                         <div id="progressText"
-                            style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;">0 / 0
-                            completed</div>
+                            style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;">0 / 0 <span
+                                data-i18n="completed">completed</span></div>
 
                         <!-- Stats Boxes -->
                         <div
@@ -211,8 +228,10 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                         style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
                         <i class="fas fa-gift pulse-icon"
                             style="font-size: 48px; color: #3b82f6; margin-bottom: 15px;"></i>
-                        <h3 style="color: var(--text-primary); margin-bottom: 5px;">Chưa có kết quả</h3>
-                        <p style="color: var(--text-secondary);">Nhập ID xác minh và bấm Bắt đầu</p>
+                        <h3 style="color: var(--text-primary); margin-bottom: 5px;" data-i18n="no_results">Chưa có kết
+                            quả</h3>
+                        <p style="color: var(--text-secondary);" data-i18n="empty_hint">Nhập ID xác minh và bấm Bắt đầu
+                        </p>
                     </div>
                 </div>
             </div>
@@ -220,60 +239,64 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
             <!-- Pricing Section -->
             <section class="pricing-section">
                 <div class="pricing-title">
-                    <h2>Bảng Giá Key Xác Minh</h2>
-                    <p>Chọn gói phù hợp để nâng cấp tài khoản của bạn ngay hôm nay</p>
+                    <h2 data-i18n="pricing_title">Bảng Giá Key Xác Minh</h2>
+                    <p data-i18n="pricing_desc">Chọn gói phù hợp để nâng cấp tài khoản của bạn ngay hôm nay</p>
                 </div>
 
                 <div class="pricing-grid">
                     <!-- 1 Key -->
                     <div class="pricing-card">
-                        <div class="tier-name">Gói Cá Nhân</div>
+                        <div class="tier-name" data-i18n="tier_personal">Gói Cá Nhân</div>
                         <div class="price-tag">
                             <span class="currency">$</span>1
                             <span class="vnd">30,000 VNĐ</span>
                         </div>
                         <ul class="pricing-features">
-                            <li><i class="fas fa-key"></i> 1 Key xác minh</li>
-                            <li><i class="fas fa-bolt"></i> Hiệu lực ngay lập tức</li>
-                            <li><i class="fas fa-headset"></i> Hỗ trợ 24/7</li>
+                            <li><i class="fas fa-key"></i> <span data-i18n="p_1key">1 Key xác minh</span></li>
+                            <li><i class="fas fa-bolt"></i> <span data-i18n="p_instant">Hiệu lực ngay lập tức</span>
+                            </li>
+                            <li><i class="fas fa-headset"></i> <span data-i18n="p_support">Hỗ trợ 24/7</span></li>
                         </ul>
                     </div>
 
                     <!-- 20 Keys (Featured) -->
                     <div class="pricing-card featured">
-                        <div class="tier-name">Gói Chuyên Nghiệp</div>
+                        <div class="tier-name" data-i18n="tier_pro">Gói Chuyên Nghiệp</div>
                         <div class="price-tag">
                             <span class="currency">$</span>20
                             <span class="vnd">500,000 VNĐ</span>
                         </div>
                         <ul class="pricing-features">
-                            <li><i class="fas fa-key"></i> 20 Keys xác minh</li>
-                            <li><i class="fas fa-tags"></i> Tiết kiệm 15%</li>
-                            <li><i class="fas fa-user-friends"></i> Ưu tiên hỗ trợ</li>
+                            <li><i class="fas fa-key"></i> <span data-i18n="p_20keys">20 Keys xác minh</span></li>
+                            <li><i class="fas fa-tags"></i> <span data-i18n="p_save15">Tiết kiệm 15%</span></li>
+                            <li><i class="fas fa-user-friends"></i> <span data-i18n="p_priority">Ưu tiên hỗ trợ</span>
+                            </li>
                         </ul>
                     </div>
 
                     <!-- 100 Keys -->
                     <div class="pricing-card">
-                        <div class="tier-name">Gói Đại Lý</div>
+                        <div class="tier-name" data-i18n="tier_agent">Gói Đại Lý</div>
                         <div class="price-tag">
                             <span class="currency">$</span>100
                             <span class="vnd">2,500,000 VNĐ</span>
                         </div>
                         <ul class="pricing-features">
-                            <li><i class="fas fa-key"></i> 100 Keys xác minh</li>
-                            <li><i class="fas fa-gem"></i> Giá tốt nhất thị trường</li>
-                            <li><i class="fas fa-star"></i> Partner ưu tiên</li>
+                            <li><i class="fas fa-key"></i> <span data-i18n="p_100keys">100 Keys xác minh</span></li>
+                            <li><i class="fas fa-gem"></i> <span data-i18n="p_best_price">Giá tốt nhất thị trường</span>
+                            </li>
+                            <li><i class="fas fa-star"></i> <span data-i18n="p_partner">Partner ưu tiên</span></li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="contact-buttons" style="margin-top: 20px;">
                     <a href="https://t.me/leo_dfx" target="_blank" class="btn-contact btn-telegram">
-                        <i class="fab fa-telegram-plane"></i> Mua Key qua Telegram: @leo_dfx
+                        <i class="fab fa-telegram-plane"></i> <span data-i18n="buy_tg">Mua Key qua Telegram:
+                            @leo_dfx</span>
                     </a>
                     <a href="https://discord.gg/PRA7b4Tc" target="_blank" class="btn-contact btn-discord">
-                        <i class="fab fa-discord"></i> Mua Key qua Discord
+                        <i class="fab fa-discord"></i> <span data-i18n="buy_discord">Mua Key qua Discord</span>
                     </a>
                 </div>
         </div>
@@ -284,7 +307,7 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
             <div class="card-header">
                 <div class="header-left">
                     <i class="fas fa-question-circle"></i>
-                    <h2>Câu hỏi thường gặp (FAQ)</h2>
+                    <h2 data-i18n="faq_title">Câu hỏi thường gặp (FAQ)</h2>
                 </div>
             </div>
             <div class="card-body" style="padding: 20px;">
@@ -292,8 +315,8 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                 <div
                     style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: #856404;">
                     <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
-                    <span style="font-weight: 600; font-size: 0.95rem;">Nếu tác vụ thất bại, vui lòng lấy liên kết
-                        mới. Không nên gửi lại cùng một liên kết nhiều lần.</span>
+                    <span style="font-weight: 600; font-size: 0.95rem;" data-i18n="faq_warn">Nếu tác vụ thất bại, vui
+                        lòng lấy liên kết mới. Không nên gửi lại cùng một liên kết nhiều lần.</span>
                 </div>
 
                 <!-- FAQ items - Updated -->
@@ -301,10 +324,11 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                     style="margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
                     <i class="fas fa-sync-alt" style="color: #3b82f6; margin-top: 4px;"></i>
                     <div style="flex: 1;">
-                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Lấy
-                            lại liên kết mới</p>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Tắt VPN, Truy
-                            cập lại trang ưu đãi dành cho sinh viên để bắt đầu lại quy trình xác thực.</p>
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;"
+                            data-i18n="faq_1_q">Lấy lại liên kết mới</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;"
+                            data-i18n="faq_1_a">Tắt VPN, Truy cập lại trang ưu đãi dành cho sinh viên để bắt đầu lại quy
+                            trình xác thực.</p>
                     </div>
                 </div>
 
@@ -312,12 +336,12 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                     style="margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
                     <i class="fas fa-mouse-pointer" style="color: #22c55e; margin-top: 4px;"></i>
                     <div style="flex: 1;">
-                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Sao
-                            chép đúng cách</p>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Khi nút hoặc
-                            liên kết xác thực hiện ra, hãy <b>nhấp chuột phải</b> và chọn "Sao chép địa chỉ liên
-                            kết" (Copy link address). <b>Tuyệt đối không nhấp chuột trái</b> để tránh làm kích hoạt
-                            mã token một lần.</p>
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;"
+                            data-i18n="faq_2_q">Sao chép đúng cách</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;"
+                            data-i18n="faq_2_a">Khi nút hoặc liên kết xác thực hiện ra, hãy <b>nhấp chuột phải</b> và
+                            chọn "Sao chép địa chỉ liên kết" (Copy link address). <b>Tuyệt đối không nhấp chuột trái</b>
+                            để tránh làm kích hoạt mã token một lần.</p>
                     </div>
                 </div>
 
@@ -328,10 +352,10 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                 <div class="faq-item"
                     style="margin-bottom: 15px; border-top: 1px solid var(--card-border); padding-top: 15px;">
                     <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-key"
-                            style="font-size: 0.8em; color: var(--accent-primary); margin-right: 8px;"></i> API Key
-                        lấy ở đâu?</h4>
-                    <p style="color: var(--text-secondary); font-size: 0.95em;">Vui lòng liên hệ Admin để nhận mã
-                        API Key hợp lệ cho việc sử dụng công cụ xác minh này.</p>
+                            style="font-size: 0.8em; color: var(--accent-primary); margin-right: 8px;"></i> <span
+                            data-i18n="faq_3_q">API Key lấy ở đâu?</span></h4>
+                    <p style="color: var(--text-secondary); font-size: 0.95em;" data-i18n="faq_3_a">Vui lòng liên hệ
+                        Admin để nhận mã API Key hợp lệ cho việc sử dụng công cụ xác minh này.</p>
                 </div>
             </div>
         </div>
