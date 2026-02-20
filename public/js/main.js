@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stats_label: 'Hoạt động gần đây (10 phút)',
             success: 'thành công',
             fail: 'thất bại',
-            api_server: 'API Server',
             checking: 'Đang kiểm tra...',
             ready: 'Sẵn sàng',
             m_status: 'Bảo trì',
@@ -64,17 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
             pricing_title: 'Bảng Giá Key Xác Minh',
             pricing_desc: 'Chọn gói phù hợp để nâng cấp tài khoản của bạn ngay hôm nay',
             tier_personal: 'Gói Cá Nhân',
-            tier_pro: 'Gói Chuyên Nghiệp',
-            tier_agent: 'Gói Đại Lý',
             p_1key: '1 Key xác minh',
-            p_20keys: '20 Keys xác minh',
-            p_100keys: '100 Keys xác minh',
             p_instant: 'Hiệu lực ngay lập tức',
             p_support: 'Hỗ trợ 24/7',
-            p_save15: 'Tiết kiệm 15%',
-            p_priority: 'Ưu tiên hỗ trợ',
-            p_best_price: 'Giá tốt nhất thị trường',
-            p_partner: 'Partner ưu tiên',
             buy_tg: 'Mua Key qua Telegram: @leo_dfx',
             buy_discord: 'Mua Key qua Discord',
             faq_title: 'Câu hỏi thường gặp (FAQ)',
@@ -109,7 +100,6 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
             stats_label: 'Recent activity (10 mins)',
             success: 'success',
             fail: 'failed',
-            api_server: 'API Server',
             checking: 'Checking...',
             ready: 'Ready',
             m_status: 'Maintenance',
@@ -130,17 +120,9 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
             pricing_title: 'Verification Key Pricing',
             pricing_desc: 'Choose a package to upgrade your account today',
             tier_personal: 'Personal Tier',
-            tier_pro: 'Professional Tier',
-            tier_agent: 'Reseller Tier',
             p_1key: '1 Verification Key',
-            p_20keys: '20 Verification Keys',
-            p_100keys: '100 Verification Keys',
             p_instant: 'Instant activation',
             p_support: '24/7 Support',
-            p_save15: 'Save 15%',
-            p_priority: 'Priority support',
-            p_best_price: 'Best market price',
-            p_partner: 'Priority Partner',
             buy_tg: 'Buy Key via Telegram: @leo_dfx',
             buy_discord: 'Buy Key via Discord',
             faq_title: 'Frequently Asked Questions (FAQ)',
@@ -159,7 +141,7 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
 US IP + Fingerprint browser.
 Direct login without verification!!!
 Recommended: Use residential US IP. Avoid exhausted Data Center IPs.
-
+            
 I'm feeling lucky -> Use one of the fields that worked well in the past 2 days.
 LOGIN NOT REQUIRED! COMPLETELY FREE!
 This site will stay active as long as possible.
@@ -288,18 +270,18 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         }
     }
 
-    // Poll quota every 10 seconds (less frequent for V2 to be polite)
+    // Poll quota every 10 seconds
     setInterval(refreshQuota, 10000);
 
     apiKeyBtn.addEventListener('click', () => {
-        const promptMsg = currentLang === 'vi' ? 'Nhập API Key / HCaptcha Token của bạn:' : 'Enter your API Key / HCaptcha Token:';
+        const promptMsg = currentLang === 'vi' ? 'Nhập API Key của bạn:' : 'Enter your API Key:';
         const input = prompt(promptMsg, apiKey);
         if (input !== null) {
             apiKey = input.trim();
             localStorage.setItem('apiKey', apiKey);
             if (apiKey) {
                 apiKeyBtn.classList.add('set');
-                refreshQuota(); // Refresh immediately after setting
+                refreshQuota();
             } else {
                 apiKeyBtn.classList.remove('set');
                 document.getElementById('quotaDisplay').style.display = 'none';
@@ -323,7 +305,7 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         if (statsAvailable) statsAvailable.textContent = 1000 - lines;
     }
 
-    // API Integration
+    // UI elements for results
     const resultsBody = document.getElementById('resultsBody');
     const clearBtn = document.getElementById('clearResultsBtn');
     const exportBtn = document.getElementById('exportResultsBtn');
@@ -349,7 +331,7 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         document.getElementById('statSuccess').textContent = verificationStats.success;
         document.getElementById('statFailed').textContent = verificationStats.failed;
         document.getElementById('statTotal').textContent = verificationStats.total;
-        document.getElementById('progressText').textContent = `${verificationStats.completed} / ${verificationStats.total} completed`;
+        document.getElementById('progressText').textContent = `${verificationStats.completed} / ${verificationStats.total} ${translations[currentLang].completed}`;
     }
 
     function createResultItem(id, status = 'pending') {
@@ -363,9 +345,6 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
                 <div id="status-${id}" style="font-size: 12px; color: var(--text-secondary);">Waiting...</div>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <button onclick="cancelItem('${id}')" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                    <i class="fas fa-ban"></i> Cancel
-                </button>
                 <span id="badge-${id}" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 6px 12px; border-radius: 6px; font-size: 12px;">
                     <i class="fas fa-clock"></i> pending
                 </span>
@@ -410,11 +389,6 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         updateStatsUI();
     }
 
-    // Cancel item (placeholder - would need backend support)
-    window.cancelItem = (id) => {
-        updateResultItem(id, 'failed', 'Cancelled by user');
-    };
-
     // Start Verification
     startBtn.addEventListener('click', async () => {
         const text = textarea.value.trim();
@@ -431,6 +405,11 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         }
 
         const isV2 = apiKey.startsWith('uak_');
+        if (!isV2) {
+            const msg = currentLang === 'vi' ? 'Hệ thống hiện chỉ hỗ trợ Key V2 (bắt đầu bằng uak_)' : 'The system now only supports V2 Keys (starting with uak_)';
+            alert(msg);
+            return;
+        }
 
         // Parse IDs/URLs
         let verificationItems = text.split('\n')
@@ -452,13 +431,8 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         resultItems = {};
         updateStatsUI();
 
-        if (isV2) {
-            // API V2 Flow (Concurrent submission and polling)
-            await handleV2Verification(verificationItems);
-        } else {
-            // Legacy V1 Flow (Legacy SSE)
-            await handleV1Verification(verificationItems);
-        }
+        // API V2 Flow
+        await handleV2Verification(verificationItems);
 
         startBtn.disabled = false;
         startBtn.innerHTML = originalBtnHTML;
@@ -508,9 +482,12 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
                     if (status === 'success') {
                         updateResultItem(id, 'success', 'Verified successfully!');
                         terminal = true;
+                        // Record stat event for dots
+                        fetch('/api/stats/record', { method: 'POST', body: JSON.stringify({ success: true }), headers: { 'Content-Type': 'application/json' } }).catch(() => { });
                     } else if (['failed', 'rejected', 'stale', 'invalid_link', 'cancelled'].includes(status)) {
                         updateResultItem(id, 'failed', `Error: ${status}`);
                         terminal = true;
+                        fetch('/api/stats/record', { method: 'POST', body: JSON.stringify({ success: false }), headers: { 'Content-Type': 'application/json' } }).catch(() => { });
                     } else if (status === 'processing' && pollData.progress) {
                         const progress = pollData.progress;
                         updateResultItem(id, 'processing', `[${progress.stage_number}/7] ${progress.message} (${progress.percentage}%)`);
@@ -524,76 +501,6 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
         });
 
         await Promise.all(promises);
-    }
-
-    async function handleV1Verification(verificationIds) {
-        // Create pending items
-        verificationIds.forEach(id => {
-            resultsList.appendChild(createResultItem(id));
-        });
-
-        try {
-            const response = await fetch('/api/batch', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': window.CSRF_TOKEN
-                },
-                body: JSON.stringify({
-                    hCaptchaToken: apiKey,
-                    verificationIds: verificationIds
-                })
-            });
-
-            if (!response.ok) {
-                let errorText = `Lỗi server: ${response.status}`;
-                try {
-                    const errJson = await response.json();
-                    if (errJson.error) errorText = errJson.error;
-                } catch (e) { }
-                throw new Error(errorText);
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                buffer += chunk;
-
-                const lines = buffer.split('\n\n');
-                buffer = lines.pop();
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.replace('data: ', '');
-                        try {
-                            const data = JSON.parse(jsonStr);
-                            handleSSEData(data);
-                        } catch (e) {
-                            console.error('Error parsing SSE data', e);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            alert('❌ ' + error.message);
-        }
-    }
-
-    function handleSSEData(data) {
-        if (data.verificationId) {
-            const id = data.verificationId;
-            const status = data.currentStep === 'success' ? 'success' :
-                (data.currentStep === 'error' || data.error) ? 'failed' : 'processing';
-            const message = data.message || data.currentStep || '';
-            updateResultItem(id, status, message);
-        }
     }
 
     // Stats Polling
@@ -626,62 +533,35 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
     refreshStats();
     setInterval(refreshStats, 15000);
 
-    // Upstream Status Check
-    async function checkUpstreamStatus() {
-        const dot = document.getElementById('upstreamStatusDot');
-        const text = document.getElementById('upstreamStatusText');
-        const ping = document.getElementById('upstreamPing');
+    // Maintenance Status Check
+    async function checkMaintenanceStatus() {
         const maintenanceOverlay = document.getElementById('maintenanceOverlay');
 
         try {
-            // Check V2 API Health (Headless request)
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
             const healthRes = await fetch(`${V2_BASE}/key/info`, {
                 method: 'HEAD',
-                mode: 'no-cors', // Standard fetch to check reachability
+                mode: 'no-cors',
                 signal: controller.signal
             }).catch(() => ({ ok: false, status: 0 }));
 
             clearTimeout(timeoutId);
 
-            // 401 is "Online" for V2 (since we don't provide a key)
-            // or 0 if CORS blocks but it still "connected" (no-cors trick)
             const isV2Alive = healthRes.status === 401 || healthRes.ok || healthRes.type === 'opaque';
-
-            if (isV2Alive) {
-                if (maintenanceOverlay) maintenanceOverlay.style.display = 'none';
-                if (dot) dot.style.background = '#22c55e';
-                if (text) text.textContent = translations[currentLang].ready;
-                if (text) text.style.color = '#22c55e';
-            } else {
-                if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
-                if (dot) dot.style.background = '#ef4444';
-                if (text) text.textContent = translations[currentLang].m_status;
-                if (text) text.style.color = '#ef4444';
-            }
-
-            // Also check our own proxy status for ping
-            const res = await fetch('/api/upstream-status');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.ping && ping) {
-                    ping.textContent = `(${data.ping}ms)`;
-                }
+            if (maintenanceOverlay) {
+                maintenanceOverlay.style.display = isV2Alive ? 'none' : 'flex';
             }
         } catch (e) {
             console.error('Health check error:', e);
             if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
-            if (dot) dot.style.background = '#ef4444';
-            if (text) text.textContent = translations[currentLang].m_status;
-            if (text) text.style.color = '#ef4444';
         }
     }
 
-    // Initial check and auto-refresh (Every 15 seconds)
-    checkUpstreamStatus();
-    setInterval(checkUpstreamStatus, 15000);
+    // Initial check and auto-refresh
+    checkMaintenanceStatus();
+    setInterval(checkMaintenanceStatus, 15000);
 
-    console.log('Batch Verifier UI Ready');
+    console.log('Batch Verifier UI Ready (V2 Focused)');
 });
