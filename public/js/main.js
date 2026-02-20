@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         vi: {
             theme_light: 'Chế độ sáng',
             theme_dark: 'Chế độ tối',
-            header_desc: 'Xác minh SheerID hàng loạt siêu tốc - Hỗ trợ API V2',
+            header_desc: 'Xác minh SheerID hàng loạt siêu tốc',
             btn_guide: 'Hướng dẫn xác minh',
             guide_warn: '⚠️ Phải đọc trước khi thực hiện',
             stats_label: 'Hoạt động gần đây (10 phút)',
@@ -103,7 +103,7 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
         en: {
             theme_light: 'Light Mode',
             theme_dark: 'Dark Mode',
-            header_desc: 'Lightning Fast SheerID Batch Verifier - API V2 Supported',
+            header_desc: 'Lightning Fast SheerID Batch Verifier',
             btn_guide: 'Verification Guide',
             guide_warn: '⚠️ Must read before proceeding',
             stats_label: 'Recent activity (10 mins)',
@@ -651,31 +651,31 @@ This tool is for Goo Student Discount Verification IDs only (US IP).`
             const isV2Alive = healthRes.status === 401 || healthRes.ok || healthRes.type === 'opaque';
 
             if (isV2Alive) {
-                maintenanceOverlay.style.display = 'none';
-                dot.style.background = '#22c55e';
-                text.textContent = translations[currentLang].ready;
-                text.style.color = '#22c55e';
+                if (maintenanceOverlay) maintenanceOverlay.style.display = 'none';
+                if (dot) dot.style.background = '#22c55e';
+                if (text) text.textContent = translations[currentLang].ready;
+                if (text) text.style.color = '#22c55e';
             } else {
-                maintenanceOverlay.style.display = 'flex';
-                dot.style.background = '#ef4444';
-                text.textContent = translations[currentLang].m_status;
-                text.style.color = '#ef4444';
+                if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
+                if (dot) dot.style.background = '#ef4444';
+                if (text) text.textContent = translations[currentLang].m_status;
+                if (text) text.style.color = '#ef4444';
             }
 
             // Also check our own proxy status for ping
             const res = await fetch('/api/upstream-status');
             if (res.ok) {
                 const data = await res.json();
-                if (data.ping) {
+                if (data.ping && ping) {
                     ping.textContent = `(${data.ping}ms)`;
                 }
             }
         } catch (e) {
             console.error('Health check error:', e);
-            maintenanceOverlay.style.display = 'flex';
-            dot.style.background = '#ef4444';
-            text.textContent = translations[currentLang].m_status;
-            text.style.color = '#ef4444';
+            if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
+            if (dot) dot.style.background = '#ef4444';
+            if (text) text.textContent = translations[currentLang].m_status;
+            if (text) text.style.color = '#ef4444';
         }
     }
 
