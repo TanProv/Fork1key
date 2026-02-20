@@ -100,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btn_save: 'Lưu lại',
             err_unauthorized: 'Key không hợp lệ',
             err_maintenance: 'Key không hợp lệ',
-            err_forbidden: 'Truy cập bị chặn (403). Kiểm tra lại IP hoặc Key của bạn.',
             err_unknown: 'Lỗi kết nối API. Vui lòng thử lại sau.'
         },
         en: {
@@ -160,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             placeholder: `...`,
             err_unauthorized: 'Invalid Key',
             err_maintenance: 'Invalid Key',
-            err_forbidden: 'Access Forbidden (403). Check your IP or Key permissions.',
             err_unknown: 'API connection error. Please try again later.'
         }
     };
@@ -286,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let msgKey = 'err_unknown';
         if (status === 401) msgKey = 'err_unauthorized';
-        if (status === 403) msgKey = 'err_forbidden';
         if (status === 503) msgKey = 'err_maintenance';
 
         errBox.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${translations[currentLang][msgKey]}</span>`;
@@ -697,8 +694,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial check and auto-refresh
-    checkMaintenanceStatus();
-    setInterval(checkMaintenanceStatus, 15000);
+    // checkMaintenanceStatus();
+    // setInterval(checkMaintenanceStatus, 15000);
 
     console.log('Batch Verifier UI Ready (V2 Focused)');
 });
