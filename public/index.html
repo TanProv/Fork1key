@@ -66,9 +66,15 @@
                 </div>
             </div>
 
-            <button class="theme-toggle" id="themeToggle" style="margin: 0;">
-                <i class="fas fa-sun"></i> <span data-i18n="theme_light">Chế độ sáng</span>
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="vi">VI</button>
+                    <button class="lang-btn" data-lang="en">EN</button>
+                </div>
+                <button class="theme-toggle" id="themeToggle" style="margin: 0;">
+                    <i class="fas fa-sun"></i> <span data-i18n="theme_light">Chế độ sáng</span>
+                </button>
+            </div>
         </div>
 
         <div class="main-grid">
@@ -93,61 +99,43 @@
                 </div>
 
                 <div class="card-body">
-                    <div class="textarea-container">
-                        <textarea id="verificationInput" data-i18n-placeholder="placeholder" placeholder="Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái...
-US IP + Fingerprint browser.
-Đăng nhập trực tiếp không cần xác minh!!!
-Khuyên dùng: Dùng IP Mỹ gốc và ít người dùng. Tránh dùng IP 'Data Center' bị nát.
-
-I'm feeling lucky -> Sử dụng một trong các trường đã hoạt động tốt trong 2 ngày qua.
-KHÔNG CẦN ĐĂNG NHẬP! HOÀN TOÀN MIỄN PHÍ!
-Trang web này sẽ duy trì lâu nhất có thể.
-Nếu token hết hạn hoặc đã xử lý -> Hãy thử lấy lại link ? mới.
-Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ)."></textarea>
-                    </div>
-
-                    <div class="info-box">
-                        <i class="fas fa-lightbulb"></i>
-                        <span data-i18n="input_hint">Dán trực tiếp URL - hệ thống sẽ tự động trích xuất ID xác
-                            minh</span>
-                    </div>
-
-                    <div class="api-key-section">
-                        <button class="btn-api-key">
+                    <div class="api-key-section-top">
+                        <button class="btn-api-key" id="apiKeyBtn">
                             <i class="fas fa-key"></i> <span data-i18n="btn_api_key">Đặt API Key</span>
                         </button>
-                        <div id="quotaDisplay"
-                            style="display: none; margin-top: 10px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; border: 1px solid var(--card-border); font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 8px; margin-bottom: 4px;">
-                                <span style="font-weight: 600; color: #fbbf24;" id="keyNameDisplay">Key Info</span>
-                                <span id="keyTypeBadge"
-                                    style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">...</span>
+                        <div id="apiErrorBox"
+                            style="display: none; margin-top: 10px; padding: 10px 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; color: #ef4444; font-size: 13px; align-items: center; gap: 10px;">
+                        </div>
+                        <div id="quotaDisplay" class="quota-horizontal" style="display: none;">
+                            <div class="quota-info-item">
+                                <span class="label" id="keyNameDisplay">Key</span>
+                                <span id="keyTypeBadge" class="badge-mini">...</span>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="color: var(--text-secondary); font-size: 11px;" data-i18n="balance">Số
-                                        dư:</span>
-                                    <span style="font-weight: 600;"><span id="quotaRemaining">0</span> <i
-                                            class="fas fa-coins" style="color: #f59e0b; font-size: 10px;"></i></span>
+                            <div class="quota-stats-row">
+                                <div class="stat-mini">
+                                    <span data-i18n="balance">Dư:</span>
+                                    <span class="value"><span id="quotaRemaining">0</span> <i
+                                            class="fas fa-coins"></i></span>
                                 </div>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="color: var(--text-secondary); font-size: 11px;"
-                                        data-i18n="reserved">Đang giữ:</span>
-                                    <span style="font-weight: 600;"><span id="quotaReserved">0</span></span>
+                                <div class="stat-mini">
+                                    <span data-i18n="reserved">Giữ:</span>
+                                    <span class="value" id="quotaReserved">0</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="color: var(--text-secondary); font-size: 11px;" data-i18n="used">Đã
-                                        dùng:</span>
-                                    <span style="font-weight: 600;"><span id="quotaUsed">0</span></span>
+                                <div class="stat-mini">
+                                    <span data-i18n="used">Dùng:</span>
+                                    <span class="value" id="quotaUsed">0</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="color: var(--text-secondary); font-size: 11px;" data-i18n="mode">Chế
-                                        độ:</span>
-                                    <span style="font-weight: 600; font-size: 11px;" id="pmodeDisplay">...</span>
+                                <div class="stat-mini mode-stat">
+                                    <span data-i18n="mode">Chế độ:</span>
+                                    <span class="value" id="pmodeDisplay">...</span>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="textarea-container">
+                        <textarea id="verificationInput" data-i18n-placeholder="placeholder"
+                            placeholder="Nhập ID xác minh hoặc URL bên dưới, mỗi dòng một cái..."></textarea>
                     </div>
 
                     <div class="action-footer">
@@ -366,6 +354,32 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
     <!-- Maintain previous sections hidden or at bottom if needed, 
          but user requested "just the part in the photo" so primarily focusing on that.
          We can keep the sponsor links below or separate appropriately if needed later. -->
+
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> <span data-i18n="btn_api_key">Đặt API Key</span></h3>
+                <button class="btn-close-modal" id="closeKeyModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-secondary);"
+                    data-i18n="modal_key_desc">Nhập mã API Key (bắt đầu bằng uak_) để sử dụng dịch vụ.</p>
+                <div class="input-group">
+                    <input type="text" id="apiKeyInput" placeholder="uak_..."
+                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-primary); font-family: monospace;">
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-secondary" id="cancelKeyBtn"
+                    style="padding: 10px 20px; border-radius: 8px; cursor: pointer; border: 1px solid var(--card-border); background: transparent; color: var(--text-secondary);"
+                    data-i18n="btn_cancel">Hủy</button>
+                <button class="btn-primary" id="saveKeyBtn"
+                    style="padding: 10px 20px; border-radius: 8px; cursor: pointer; border: none; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;"
+                    data-i18n="btn_save">Lưu lại</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/main.js"></script>
 </body>

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bg-dark: #0f172a;
     /* Dark blue-ish background */
     --card-bg: #111e36;
@@ -230,29 +230,107 @@ textarea::placeholder {
     color: var(--accent-yellow);
 }
 
-/* API Key Section */
-.api-key-section {
+/* API Key Section Top */
+.api-key-section-top {
+    margin-bottom: 20px;
+}
+
+.quota-horizontal {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
     display: flex;
-    justify-content: center;
-    padding: 0.5rem 0;
+    flex-direction: column;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.quota-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed var(--card-border);
+    padding-bottom: 8px;
+}
+
+.quota-info-item .label {
+    font-weight: 600;
+    color: var(--accent-yellow);
+    font-size: 13px;
+}
+
+.badge-mini {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    text-transform: uppercase;
+}
+
+.quota-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.stat-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-mini span:first-child {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-mini .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-mini .value i {
+    font-size: 10px;
+    color: #f59e0b;
+}
+
+@media (max-width: 600px) {
+    .quota-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .btn-api-key {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--card-border);
     color: #fff;
-    padding: 0.5rem 1.5rem;
-    border-radius: 6px;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    width: 100%;
+    justify-content: center;
 }
 
 .btn-api-key:hover {
+    background: rgba(51, 65, 85, 0.8);
     border-color: #475569;
+    transform: translateY(-1px);
+}
+
+.btn-api-key.set {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.05);
 }
 
 /* Footer Stats & Actions */
@@ -777,4 +855,73 @@ textarea::placeholder {
     font-weight: 800;
     color: var(--text-primary);
     margin: 1rem 0;
+}
+/* --- Modal System (Fix) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 450px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 15px 25px;
+    background: rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--card-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }

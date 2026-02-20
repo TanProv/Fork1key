@@ -1,7 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
+    // State & Data
+    let currentLang = localStorage.getItem('lang') || 'vi';
+    let apiKey = localStorage.getItem('apiKey') || '';
+    let currentKeyInfo = null;
     let isLightMode = false;
+    const V2_BASE = 'https://sheeridbot.com/api/v2';
+
+    // UI Elements
+    const themeToggle = document.getElementById('themeToggle');
+    const textarea = document.getElementById('verificationInput');
+    const statsEntered = document.getElementById('lineCount');
+    const statsAvailable = document.getElementById('slotsEmpty');
+    const startBtn = document.getElementById('startBtn');
+    const apiKeyBtn = document.getElementById('apiKeyBtn');
 
     // Check localStorage for theme preference
     if (localStorage.getItem('theme') === 'light') {
@@ -85,7 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
             history_title: 'Lịch Sử Xác Minh',
             btn_refresh: 'Làm mới',
             history_empty: 'Chưa có lịch sử hoặc chưa nhập API Key',
-            placeholder: `...`
+            modal_key_desc: 'Nhập mã API Key (bắt đầu bằng uak_) để sử dụng dịch vụ.',
+            btn_save: 'Lưu lại',
+            err_unauthorized: 'Key không hợp lệ',
+            err_maintenance: 'Key không hợp lệ',
+            err_unknown: 'Lỗi kết nối API. Vui lòng thử lại sau.'
         },
         en: {
             theme_light: 'Light Mode',
@@ -138,11 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
             history_title: 'Verification History',
             btn_refresh: 'Refresh',
             history_empty: 'No history or API Key not set',
-            placeholder: `...`
+            modal_key_desc: 'Enter API Key (starting with uak_) to use the service.',
+            btn_save: 'Save Changes',
+            btn_cancel: 'Cancel',
+            placeholder: `...`,
+            err_unauthorized: 'Invalid Key',
+            err_maintenance: 'Invalid Key',
+            err_unknown: 'API connection error. Please try again later.'
         }
     };
 
-    let currentLang = localStorage.getItem('lang') || 'vi';
 
     function updateTranslations() {
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -164,10 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // API Key button special handling
-        if (apiKey) {
-            apiKeyBtn.innerHTML = `<i class="fas fa-check"></i> ${translations[currentLang].btn_api_key_set}`;
-        } else {
-            apiKeyBtn.innerHTML = `<i class="fas fa-key"></i> ${translations[currentLang].btn_api_key}`;
+        const apiKeyBtnEl = document.getElementById('apiKeyBtn');
+        if (apiKeyBtnEl) {
+            if (apiKey) {
+                apiKeyBtnEl.innerHTML = `<i class="fas fa-check"></i> ${translations[currentLang].btn_api_key_set}`;
+            } else {
+                apiKeyBtnEl.innerHTML = `<i class="fas fa-key"></i> ${translations[currentLang].btn_api_key}`;
+            }
         }
     }
 
@@ -194,21 +217,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial translation call
     setLanguage(currentLang);
 
-    // Input Handling
-    const textarea = document.getElementById('verificationInput');
-    const statsEntered = document.getElementById('lineCount');
-    const statsAvailable = document.getElementById('slotsEmpty');
-    const startBtn = document.getElementById('startBtn');
-    const apiKeyBtn = document.querySelector('.btn-api-key');
 
-    // Store API key
-    let apiKey = localStorage.getItem('apiKey') || '';
     if (apiKey) {
         apiKeyBtn.classList.add('set');
         refreshQuota(); // Load quota immediately
     }
 
-    const V2_BASE = 'https://sheeridbot.com/api/v2';
 
     // Quota Refresh Function
     async function refreshQuota() {
@@ -221,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${V2_BASE}/key/info`, {
                 headers: { 'X-API-Key': apiKey }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 currentKeyInfo = data; // Store for verification logic
@@ -232,15 +247,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modeText = data.multi_processing ? `Multi (${data.max_concurrent})` : `Seq (${data.cooldown_seconds}s)`;
                 document.getElementById('pmodeDisplay').textContent = modeText;
 
-                document.getElementById('keyNameDisplay').textContent = data.key_name;
+                document.getElementById('keyNameDisplay').textContent = data.key_name || 'Active Key';
                 const typeBadge = document.getElementById('keyTypeBadge');
                 if (typeBadge) {
                     typeBadge.textContent = data.key_type.replace('_', '-');
-                    typeBadge.style.background = data.key_type === 'multi_use' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(168, 85, 247, 0.1)';
-                    typeBadge.style.color = data.key_type === 'multi_use' ? '#3b82f6' : '#a855f7';
                 }
 
                 document.getElementById('quotaDisplay').style.display = 'flex';
+                // Hide error if shown
+                const errBox = document.getElementById('apiErrorBox');
+                if (errBox) errBox.style.display = 'none';
 
                 const remaining = data.available_credits;
                 const quotaElem = document.getElementById('quotaRemaining');
@@ -249,15 +265,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If info ok, also fetch history
                 fetchHistory();
             } else {
-                document.getElementById('quotaDisplay').style.display = 'none';
-                currentKeyInfo = null;
+                handleApiError(res.status);
             }
         } catch (e) {
             console.error('Quota fetch error:', e);
+            handleApiError(0);
         }
     }
 
-    let currentKeyInfo = null;
+    function handleApiError(status) {
+        const quotaDisplay = document.getElementById('quotaDisplay');
+        const errBox = document.getElementById('apiErrorBox');
+        if (!errBox) return;
+
+        quotaDisplay.style.display = 'none';
+        errBox.style.display = 'flex';
+        currentKeyInfo = null;
+
+        let msgKey = 'err_unknown';
+        if (status === 401) msgKey = 'err_unauthorized';
+        if (status === 503) msgKey = 'err_maintenance';
+
+        errBox.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${translations[currentLang][msgKey]}</span>`;
+    }
+
 
     async function fetchHistory() {
         if (!apiKey) return;
@@ -311,21 +342,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // Poll quota every 10 seconds
     setInterval(refreshQuota, 10000);
 
+    // Modal logic
+    const apiKeyModal = document.getElementById('apiKeyModal');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const saveKeyBtn = document.getElementById('saveKeyBtn');
+    const cancelKeyBtn = document.getElementById('cancelKeyBtn');
+    const closeKeyModal = document.getElementById('closeKeyModal');
+
     apiKeyBtn.addEventListener('click', () => {
-        const promptMsg = currentLang === 'vi' ? 'Nhập API Key của bạn:' : 'Enter your API Key:';
-        const input = prompt(promptMsg, apiKey);
-        if (input !== null) {
-            apiKey = input.trim();
-            localStorage.setItem('apiKey', apiKey);
-            if (apiKey) {
-                apiKeyBtn.classList.add('set');
-                refreshQuota();
-            } else {
-                apiKeyBtn.classList.remove('set');
+        console.log('Opening API Key Modal');
+        apiKeyInput.value = apiKey;
+        apiKeyModal.style.display = 'flex';
+        apiKeyInput.focus();
+    });
+
+    const closeModal = () => {
+        apiKeyModal.style.display = 'none';
+    };
+
+    cancelKeyBtn.addEventListener('click', closeModal);
+    closeKeyModal.addEventListener('click', closeModal);
+    apiKeyModal.addEventListener('click', (e) => {
+        if (e.target === apiKeyModal) closeModal();
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+        const input = apiKeyInput.value.trim();
+        apiKey = input;
+        localStorage.setItem('apiKey', apiKey);
+
+        if (apiKey) {
+            apiKeyBtn.classList.add('set');
+            refreshQuota();
+        } else {
+            apiKeyBtn.classList.remove('set');
+            if (document.getElementById('quotaDisplay')) {
                 document.getElementById('quotaDisplay').style.display = 'none';
             }
-            updateTranslations();
         }
+        updateTranslations();
+        closeModal();
+    });
+
+    apiKeyInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveKeyBtn.click();
     });
 
     textarea.addEventListener('input', () => {
@@ -611,20 +671,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+            // Use X-API-Key if available to avoid 401, or use a dummy key that fails gracefully
+            const headers = apiKey ? { 'X-API-Key': apiKey } : {};
+
             const healthRes = await fetch(`${V2_BASE}/key/info`, {
                 method: 'HEAD',
-                mode: 'no-cors',
+                headers: headers,
                 signal: controller.signal
             }).catch(() => ({ ok: false, status: 0 }));
 
             clearTimeout(timeoutId);
 
-            const isV2Alive = healthRes.status === 401 || healthRes.ok || healthRes.type === 'opaque';
+            // 401 means API is UP but key is missing/bad. 503 means UP but busy. Both mean system is "alive".
+            const isV2Alive = healthRes.status === 401 || healthRes.status === 503 || healthRes.ok || healthRes.type === 'opaque';
             if (maintenanceOverlay) {
                 maintenanceOverlay.style.display = isV2Alive ? 'none' : 'flex';
             }
         } catch (e) {
-            console.error('Health check error:', e);
+            // Only show maintenance if it's a real connection error
             if (maintenanceOverlay) maintenanceOverlay.style.display = 'flex';
         }
     }
