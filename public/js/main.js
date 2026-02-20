@@ -416,42 +416,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 document.getElementById('statsSuccess').textContent = data.success;
                 document.getElementById('statsFail').textContent = data.fail;
+
+                // Render Dots
+                const dotsContainer = document.getElementById('statsDots');
+                if (data.events && data.events.length > 0) {
+                    dotsContainer.innerHTML = '';
+                    data.events.forEach(status => {
+                        const dot = document.createElement('span');
+                        dot.className = `dot ${status === 1 ? 'success' : 'fail'}`;
+                        dotsContainer.appendChild(dot);
+                    });
+                } else {
+                    dotsContainer.innerHTML = '<span class="loading-dots">Chưa có hoạt động</span>';
+                }
             }
         } catch (e) {
             console.error('Stats fetch error:', e);
         }
     }
-    // Poll every 30s
+    // Poll every 15s for "live" feel
     refreshStats();
-    setInterval(refreshStats, 30000);
-
-    function handleSSEData(data, container) {
-
-        if (data.verificationId) {
-            // Item result
-            const itemDiv = document.createElement('div');
-            itemDiv.className = `result-item ${data.currentStep === 'success' ? 'success' : 'error'}`;
-            itemDiv.style.padding = '10px';
-            itemDiv.style.borderBottom = '1px solid var(--card-border)';
-            itemDiv.style.display = 'flex';
-            itemDiv.style.justifyContent = 'space-between';
-            itemDiv.style.fontSize = '0.9rem';
-
-            const icon = data.currentStep === 'success' ? '<i class="fas fa-check" style="color:#22c55e"></i>' : '<i class="fas fa-times" style="color:#ef4444"></i>';
-
-            itemDiv.innerHTML = `
-                <div style="display:flex; gap:10px; align-items:center;">
-                    ${icon} 
-                    <span style="font-family:monospace; color:var(--text-primary)">${data.verificationId}</span>
-                </div>
-                <span style="color:var(--text-secondary)">${data.message}</span>
-            `;
-
-            container.appendChild(itemDiv);
-            // Auto scroll to bottom
-            container.scrollTop = container.scrollHeight;
-        }
-    }
+    setInterval(refreshStats, 15000);
 
     // Upstream Status Check
     async function checkUpstreamStatus() {

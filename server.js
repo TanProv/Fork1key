@@ -961,34 +961,38 @@ app.get('/api/stats/recent', async (req, res) => {
   const tenMinsAgo = now - 10 * 60 * 1000;
   let success = 0;
   let fail = 0;
+  let events_list = [];
 
   if (USE_REDIS && storage.redis) {
     try {
-      // Get all events in last 10 mins
       const events = await storage.redis.zrange('stats_events', tenMinsAgo, now, { byScore: true });
-      events.forEach(member => { // member format: timestamp:status:random
+      events.forEach(member => {
         if (typeof member === 'string') {
           const parts = member.split(':');
-          if (parts[1] === '1') success++;
+          const isSuccess = parts[1] === '1';
+          if (isSuccess) success++;
           else fail++;
+          events_list.push(isSuccess ? 1 : 0);
         }
       });
     } catch (e) {
       console.error('Redis Stats Error:', e);
     }
   } else {
-    // Local
     if (global.localStats) {
       global.localStats.forEach(s => {
         if (s.ts > tenMinsAgo) {
           if (s.success) success++;
           else fail++;
+          events_list.push(s.success ? 1 : 0);
         }
       });
     }
   }
 
-  res.json({ success, fail });
+  // Limit to last 50 dots to keep UI clean
+  const recent_events = events_list.slice(-50);
+  res.json({ success, fail, events: recent_events });
 });
 
 if (process.env.NODE_ENV !== 'test') {

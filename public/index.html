@@ -12,16 +12,11 @@
 </head>
 
 <body>
-    <!-- Tribute Banner -->
-    <div
-        style="background: linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b); text-align: center; padding: 8px 15px; font-size: 14px; font-weight: 500; color: #fff; letter-spacing: 1px;">
-        🙏 Đa tạ U老师, U老师不灭, U老师万岁 🙏
-    </div>
 
     <div class="app-container">
         <div class="header-section">
             <h1><i class="fas fa-check-double"></i> Batch Verifier</h1>
-            <p>Xác minh ID hàng loạt siêu tốc - Hỗ trợ Proxy, Auto-Refund</p>
+            <p>Xác minh SheerID hàng loạt siêu tốc - Hỗ trợ API V2</p>
             <div class="hero-actions"
                 style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; justify-content: center;">
                 <a href="/guide.html" class="btn-primary"
@@ -34,14 +29,19 @@
                 </span>
             </div>
 
-            <!-- Stats Widget -->
-            <div id="statsWidget"
-                style="background: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--card-border); display: inline-flex; gap: 20px; margin-top: 10px; font-size: 14px;">
-                <span style="color: var(--text-secondary);"><i class="fas fa-clock"></i> 10 phút qua:</span>
-                <span style="color: #22c55e; font-weight: bold;"><i class="fas fa-check-circle"></i> <span
-                        id="statsSuccess">...</span></span>
-                <span style="color: #ef4444; font-weight: bold;"><i class="fas fa-times-circle"></i> <span
-                        id="statsFail">...</span></span>
+            <!-- Modern Activity Widget -->
+            <div id="statsWidget" class="activity-widget">
+                <div class="activity-label">
+                    <i class="fas fa-pulse fa-heartbeat"></i> Hoạt động gần đây (10 phút)
+                </div>
+                <div id="statsDots" class="dots-container">
+                    <!-- Dots will be injected by JS -->
+                    <span class="loading-dots">Đang tải dữ liệu...</span>
+                </div>
+                <div class="activity-counts">
+                    <span class="count-item success"><span id="statsSuccess">0</span> thành công</span>
+                    <span class="count-item fail"><span id="statsFail">0</span> thất bại</span>
+                </div>
             </div>
 
             <!-- Upstream Status Widget -->
@@ -212,7 +212,7 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                     <div class="pricing-card">
                         <div class="tier-name">Gói Cá Nhân</div>
                         <div class="price-tag">
-                            <span class="currency">$</span>1.25
+                            <span class="currency">$</span>1
                             <span class="vnd">30,000 VNĐ</span>
                         </div>
                         <ul class="pricing-features">
@@ -227,7 +227,7 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                         <div class="tier-name">Gói Chuyên Nghiệp</div>
                         <div class="price-tag">
                             <span class="currency">$</span>20
-                            <span class="vnd">520,000 VNĐ</span>
+                            <span class="vnd">500,000 VNĐ</span>
                         </div>
                         <ul class="pricing-features">
                             <li><i class="fas fa-key"></i> 20 Keys xác minh</li>
@@ -251,97 +251,88 @@ Công cụ này chỉ dành cho Goo Student Discount Verification IDs (IP Mỹ).
                     </div>
                 </div>
 
-                <!-- Contact Section -->
-                <div class="contact-section">
-                    <h3 style="color: #fff; font-size: 1.5rem; margin-bottom: 0.5rem;">Sẵn sàng nâng cấp?</h3>
-                    <p style="color: var(--text-secondary);">Liên hệ ngay với bộ phận hỗ trợ để thanh toán và nhận key
-                        tự động</p>
-                    <div class="contact-buttons">
-                        <a href="https://t.me/leo_dfx" target="_blank" class="btn-contact btn-telegram">
-                            <i class="fab fa-telegram-plane"></i> Telegram: @leo_dfx
-                        </a>
-                        <a href="https://discord.gg/PRA7b4Tc" target="_blank" class="btn-contact btn-discord">
-                            <i class="fab fa-discord"></i> Tham gia Discord
-                        </a>
+                <div class="contact-buttons" style="margin-top: 20px;">
+                    <a href="https://t.me/leo_dfx" target="_blank" class="btn-contact btn-telegram">
+                        <i class="fab fa-telegram-plane"></i> Mua Key qua Telegram: @leo_dfx
+                    </a>
+                    <a href="https://discord.gg/PRA7b4Tc" target="_blank" class="btn-contact btn-discord">
+                        <i class="fab fa-discord"></i> Mua Key qua Discord
+                    </a>
+                </div>
+        </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <div class="card faq-card" style="margin-top: 30px;">
+            <div class="card-header">
+                <div class="header-left">
+                    <i class="fas fa-question-circle"></i>
+                    <h2>Câu hỏi thường gặp (FAQ)</h2>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <!-- Warning Box from image -->
+                <div
+                    style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: #856404;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+                    <span style="font-weight: 600; font-size: 0.95rem;">Nếu tác vụ thất bại, vui lòng lấy liên kết
+                        mới. Không nên gửi lại cùng một liên kết nhiều lần.</span>
+                </div>
+
+                <!-- FAQ items - Updated -->
+                <div class="faq-item"
+                    style="margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
+                    <i class="fas fa-sync-alt" style="color: #3b82f6; margin-top: 4px;"></i>
+                    <div style="flex: 1;">
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Lấy
+                            lại liên kết mới</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Tắt VPN, Truy
+                            cập lại trang ưu đãi dành cho sinh viên để bắt đầu lại quy trình xác thực.</p>
                     </div>
                 </div>
-            </section>
 
-            <!-- FAQ Section -->
-            <div class="card faq-card" style="margin-top: 30px;">
-                <div class="card-header">
-                    <div class="header-left">
-                        <i class="fas fa-question-circle"></i>
-                        <h2>Câu hỏi thường gặp (FAQ)</h2>
+                <div class="faq-item"
+                    style="margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
+                    <i class="fas fa-mouse-pointer" style="color: #22c55e; margin-top: 4px;"></i>
+                    <div style="flex: 1;">
+                        <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Sao
+                            chép đúng cách</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Khi nút hoặc
+                            liên kết xác thực hiện ra, hãy <b>nhấp chuột phải</b> và chọn "Sao chép địa chỉ liên
+                            kết" (Copy link address). <b>Tuyệt đối không nhấp chuột trái</b> để tránh làm kích hoạt
+                            mã token một lần.</p>
                     </div>
                 </div>
-                <div class="card-body" style="padding: 20px;">
-                    <!-- Warning Box from image -->
-                    <div
-                        style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: #856404;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
-                        <span style="font-weight: 600; font-size: 0.95rem;">Nếu tác vụ thất bại, vui lòng lấy liên kết
-                            mới. Không nên gửi lại cùng một liên kết nhiều lần.</span>
-                    </div>
 
-                    <!-- FAQ items - Updated -->
-                    <div class="faq-item"
-                        style="margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
-                        <i class="fas fa-sync-alt" style="color: #3b82f6; margin-top: 4px;"></i>
-                        <div style="flex: 1;">
-                            <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Lấy
-                                lại liên kết mới</p>
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Tắt VPN, Truy
-                                cập lại trang ưu đãi dành cho sinh viên để bắt đầu lại quy trình xác thực.</p>
-                        </div>
-                    </div>
-
-                    <div class="faq-item"
-                        style="margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px;">
-                        <i class="fas fa-mouse-pointer" style="color: #22c55e; margin-top: 4px;"></i>
-                        <div style="flex: 1;">
-                            <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0; font-weight: 600;">Sao
-                                chép đúng cách</p>
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px;">Khi nút hoặc
-                                liên kết xác thực hiện ra, hãy <b>nhấp chuột phải</b> và chọn "Sao chép địa chỉ liên
-                                kết" (Copy link address). <b>Tuyệt đối không nhấp chuột trái</b> để tránh làm kích hoạt
-                                mã token một lần.</p>
-                        </div>
-                    </div>
-
-                    <!-- Keep the original important ones? 
+                <!-- Keep the original important ones? 
                          User said "bỏ 2 cái" (Why need verify? and How many ID?) and "thêm 3 cái trong ảnh".
                          I'll append the remaining ones after the new ones. -->
 
-                    <div class="faq-item"
-                        style="margin-bottom: 15px; border-top: 1px solid var(--card-border); padding-top: 15px;">
-                        <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-key"
-                                style="font-size: 0.8em; color: var(--accent-primary); margin-right: 8px;"></i> API Key
-                            lấy ở đâu?</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.95em;">Vui lòng liên hệ Admin để nhận mã
-                            API Key hợp lệ cho việc sử dụng công cụ xác minh này.</p>
-                    </div>
+                <div class="faq-item"
+                    style="margin-bottom: 15px; border-top: 1px solid var(--card-border); padding-top: 15px;">
+                    <h4 style="color: var(--text-primary); margin-bottom: 8px;"><i class="fas fa-key"
+                            style="font-size: 0.8em; color: var(--accent-primary); margin-right: 8px;"></i> API Key
+                        lấy ở đâu?</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.95em;">Vui lòng liên hệ Admin để nhận mã
+                        API Key hợp lệ cho việc sử dụng công cụ xác minh này.</p>
                 </div>
             </div>
-
-            </main>
-
-            <footer class="footer-logo">
-                <a href="https://linux.do" target="_blank" class="linux-do-link">
-                    <i class="fab fa-linux"></i> Linux.do
-                </a>
-                <span style="margin: 0 10px; color: var(--text-secondary);">|</span>
-                <a href="/admin.html" class="linux-do-link" style="color: var(--text-secondary); font-size: 0.9em;">
-                    <i class="fas fa-user-shield"></i> Admin Panel
-                </a>
-            </footer>
         </div>
 
-        <!-- Maintain previous sections hidden or at bottom if needed, 
+        </main>
+
+        <footer class="footer-logo">
+            <a href="https://linux.do" target="_blank" class="linux-do-link">
+                <i class="fab fa-linux"></i> Linux.do
+            </a>
+        </footer>
+    </div>
+
+    <!-- Maintain previous sections hidden or at bottom if needed, 
          but user requested "just the part in the photo" so primarily focusing on that.
          We can keep the sponsor links below or separate appropriately if needed later. -->
 
-        <script src="js/main.js"></script>
+    <script src="js/main.js"></script>
 </body>
 
 </html>
